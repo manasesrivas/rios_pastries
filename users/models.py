@@ -9,12 +9,13 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('El usuario debe tener un email')
 
+        if 'rol' not in extra_fields or extra_fields['rol'] is None:
+            extra_fields['rol'] = Roles.objects.get(rol='Cliente')
+
         email = self.normalize_email(email)
-        cliente = Roles.objects.get(rol='Cliente')
-        print(cliente)
+        
         user = self.model(
             email = email,
-            rol=cliente,
             **extra_fields
         )
 
@@ -24,11 +25,11 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        administrador = Roles.objects.get('Administrador')
+        administrador = Roles.objects.get(rol='Administrador')
         return self.create_user(
             email=email,
             password=password,
-            rol=administrador
+            rol=administrador,
             **extra_fields
         )
 
@@ -36,7 +37,7 @@ class User(AbstractBaseUser):
     nombres = models.CharField(null=True, blank=True, max_length=100)
     apellidos = models.CharField(null=True, blank=True, max_length=100)
 
-    # telefono = models.CharField(max_length=9)
+    telefono = models.CharField(max_length=9)
     email = models.EmailField(
         unique=True,
     )
