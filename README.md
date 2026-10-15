@@ -19,7 +19,10 @@ python manage.py startapp users
 ```
 luego registrarlo en el archivo `settings.py` en array `INSTALLED_APPS` agregar debajo la app creada para que django pueda reconocerla
 
-
+comando para crear la migracion para los roles iniciales
+```bash
+python manage.py makemigrations [modulo] --empty -n [nombre_migracion]
+```
 
 ## rutas
 
