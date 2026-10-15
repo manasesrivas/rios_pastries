@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{% url 'users:allUsers' %}">
+    <article>
+        <h3>
+            administrar usuarios
+        </h3>
+    </article>
+</a>
+<a href="{% url 'roles:allRoles' %}">
+    <article>
+        <h3>administrar roles</h3>
+    </article>
+</a>
+
+    <style>
+        article{
+            width: 200px;
+            aspect-ratio: 1/1;
+            background: gray;
+    }
+</style>
+{% endblock %}
