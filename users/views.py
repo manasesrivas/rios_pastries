@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import User
 
 
-from .forms import UserForm, UserModelForm
+from .forms import UserModelForm
 DIR = 'users/'
 
 # Create your views here.
@@ -27,26 +27,12 @@ class TodosUsuariosView(LoginRequiredMixin, ListView):
         return super().get_context_data(**kwargs)
 
 class AgregarUsuario(CreateView):
-    form_class = UserForm
+    form_class = UserModelForm
     template_name = 'users/add_user_form.html'
+    success_url = reverse_lazy('users:allUsers')
 
-    def get(self, request, *args, **kargs):
-        return render(request, self.template_name, {'form': self.form_class})
 
-    def post(self, request, *args, **kargs):
-        form = self.form_class(request.POST)
-        if form.is_valid(): 
-            user = User.objects.create_user(
-                nombres=form.cleaned_data['nombres'],
-                apellidos=form.cleaned_data['apellidos'],
-                email=form.cleaned_data['email'],
-                rol=form.cleaned_data['rol']
-            )
-
-            user.set_password(form.cleaned_data['password'])
-            user.save()
-            return redirect('users:allUsers')
-
+    
 class UserUpdate(UpdateView):
     model = User
     form_class = UserModelForm

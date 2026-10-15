@@ -37,7 +37,7 @@ class User(AbstractBaseUser):
     nombres = models.CharField(null=True, blank=True, max_length=100)
     apellidos = models.CharField(null=True, blank=True, max_length=100)
 
-    telefono = models.CharField(max_length=9)
+    telefono = models.CharField(max_length=9, null=True)
     email = models.EmailField(
         unique=True,
     )
