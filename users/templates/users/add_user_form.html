@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    <form action="{% url 'createUser' %}" method="POST">
+    <form action="{% url 'users:createUser' %}" method="POST">
         {% csrf_token %}
         {{form}}
         <button>agregar usuario</button>
