@@ -8,10 +8,13 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('El usuario debe tener un email')
-        email = self.normalize_email(email)
 
+        email = self.normalize_email(email)
+        cliente = Roles.objects.get(rol='Cliente')
+        print(cliente)
         user = self.model(
             email = email,
+            rol=cliente,
             **extra_fields
         )
 
@@ -21,9 +24,11 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        administrador = Roles.objects.get('Administrador')
         return self.create_user(
             email=email,
             password=password,
+            rol=administrador
             **extra_fields
         )
 
