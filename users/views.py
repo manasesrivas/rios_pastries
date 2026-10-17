@@ -1,5 +1,4 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 from django.views import View
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView
 from django.urls import reverse_lazy
@@ -9,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from .models import User
 
 
-from .forms import UserModelForm
+from .forms import UserModelForm, UserUpdateForm
 DIR = 'users/'
 
 # Create your views here.
@@ -35,11 +34,9 @@ class AgregarUsuario(CreateView):
     
 class UserUpdate(UpdateView):
     model = User
-    form_class = UserModelForm
+    form_class = UserUpdateForm
     template_name = 'users/update.html'
     context_object_name = 'user'
     success_url = reverse_lazy('users:allUsers')
 
-    # def get(self, request, *args, **kargs):
-    #     return render(request, 'users/update.html', {'form': self.form_class})
 
