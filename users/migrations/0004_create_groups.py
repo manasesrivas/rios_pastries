@@ -2,19 +2,31 @@
 
 from django.db import migrations
 
+groups = [
+    'Administrador',
+    'Empleado',
+    'Cliente'
+]
 def crear_grupo_cliente(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
 
-    Group.objects.using(schema_editor.connection.alias).get_or_create(
-        name="Cliente"
-    )
+    groups = [
+        'Administrador',
+        'Empleado',
+        'Cliente'
+    ]
+
+    for group in groups:
+        Group.objects.using(schema_editor.connection.alias).get_or_create(
+            name=group
+        )
 
 
 def eliminar_grupo_cliente(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
 
-    Group.objects.using(schema_editor.connection.alias).filter(
-        name="Cliente"
+    Group.objects.filter(
+        name__in=groups
     ).delete()
 
 
