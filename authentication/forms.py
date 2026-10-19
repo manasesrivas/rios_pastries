@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib.auth.models import Group
+from django.contrib.auth.forms import UserCreationForm
 
 class LoginForm(forms.Form):
     email = forms.EmailField(
@@ -17,27 +19,11 @@ class LoginForm(forms.Form):
     )
 
 
-from django.contrib.auth import password_validation
-from django.core.exceptions import ValidationError
 
 from users.models import User
 
 
-class UserRegisterForm(forms.ModelForm):
-
-    password = forms.CharField(
-        label="Contraseña",
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ingresa tu contraseña',
-            'autocomplete': 'new-password',
-        }),
-        error_messages={
-            'required': 'La contraseña es obligatoria.',
-        },
-    )
-
-    
+class UserRegisterForm(UserCreationForm):
 
     class Meta:
         model = User
@@ -45,7 +31,6 @@ class UserRegisterForm(forms.ModelForm):
             'nombres',
             'apellidos',
             'email',
-            'password',
         ]
 
         labels = {
@@ -87,28 +72,13 @@ class UserRegisterForm(forms.ModelForm):
         }
 
 
-    def clean_password(self):
-        password = self.cleaned_data.get('password')
-
-        password_validation.validate_password(
-            password,
-            user=self.instance,
-        )
-
-        return password
 
     def save(self, commit=True):
-        if not commit:
-            raise ValueError(
-                'Este formulario requiere guardar el usuario.'
-            )
+        user = super().save(commit=commit)
 
-        user = User.objects.create_user(
-            email=self.cleaned_data['email'],
-            password=self.cleaned_data['password'],
-            nombres=self.cleaned_data['nombres'],
-            apellidos=self.cleaned_data['apellidos'],
-        )
-        if commit: user.save()
+        if commit:
+            grupo = Group.objects.get(name="Cliente")
+            user.groups.add(grupo)
+
         return user
 
