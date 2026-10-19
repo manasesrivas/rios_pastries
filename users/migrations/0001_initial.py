@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('roles', '0001_initial'),
     ]
 
     operations = [
@@ -22,7 +21,6 @@ class Migration(migrations.Migration):
                 ('nombres', models.CharField(blank=True, max_length=100, null=True)),
                 ('apellidos', models.CharField(blank=True, max_length=100, null=True)),
                 ('email', models.EmailField(max_length=254, unique=True)),
-                ('rol', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='roles.roles')),
             ],
             options={
                 'abstract': False,

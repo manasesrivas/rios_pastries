@@ -4,7 +4,6 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
-from roles.models import Roles
 
 
 class UserManager(BaseUserManager):
