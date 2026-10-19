@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     # apps
     'users',
     'authentication',
-    'roles',
+    # 'roles',
 ]
 
 MIDDLEWARE = [
