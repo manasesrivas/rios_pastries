@@ -1,15 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    {% if perms.users.view_user %}
-        <a href="{% url 'users:allUsers' %}">
-            <article>
-                <h3>
-                    administrar usuarios
-                </h3>
-            </article>
-        </a>
-    {% endif %}
-
+    {% include 'menu.html' %}
     <h1>Rios pastries</h1>
 
         <style>
