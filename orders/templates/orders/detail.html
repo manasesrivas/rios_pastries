@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Detalle de pedido</h1>
+
+<p>ID: {{ order.pk }}</p>
+<p>Fecha: {{ order.created_at }}</p>
+
+<a href="{% url 'orders:update' order.pk %}">Editar</a>
+<a href="{% url 'orders:list' %}">Volver</a>
+
+{% endblock %}
