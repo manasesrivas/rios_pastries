@@ -2,30 +2,91 @@
 
 from django.db import migrations
 
-def asignar_permisos(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
-    Permission = apps.get_model('auth', 'Permission')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-
-    # Buscar el grupo Administrador
-    grupo, _ = Group.objects.get_or_create(name='Administrador')
-
-    # Obtener el tipo de contenido del modelo User personalizado
-    User = apps.get_model('users', 'User')
-    content_type = ContentType.objects.get_for_model(User)
-
-    # Obtener los permisos CRUD del modelo User
-    permisos = Permission.objects.filter(
-        content_type=content_type,
-        codename__in=[
+configuracion_permisos = [
+    {
+        'app': 'users',
+        'modelo': 'user',
+        'permisos': [
             'add_user',
             'view_user',
             'change_user',
             'delete_user',
         ],
-    )
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'products',
+        'modelo': 'product',
+        'permisos': [
+            'add_product',
+            'view_product',
+            'change_product',
+            'delete_product',
+        ],
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'categories',
+        'modelo': 'category',
+        'permisos': [
+            'add_category',
+            'view_category',
+            'change_category',
+            'delete_category',
+        ],
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'products',
+        'modelo': 'product',
+        'permisos': ['view_product'],
+        'grupo': 'Cliente',
+    },
+    {
+        'app': 'products',
+        'modelo': 'product',
+        'permisos': [
+            'view_product',
+            'add_product',
+            'change_product',
+        ],
+        'grupo': 'Empleado',
+    },
+]
 
-    grupo.permissions.add(*permisos)
+def asignar_permisos(apps, schema_editor):
+    Group = apps.get_model('auth', 'Group')
+    Permission = apps.get_model('auth', 'Permission')
+    ContentType = apps.get_model('contenttypes', 'ContentType')
+
+    db = schema_editor.connection.alias
+
+    for configuracion in configuracion_permisos:
+        app = configuracion['app']
+        modelo = configuracion['modelo']
+        permisos_codename = configuracion['permisos']
+        nombre_grupo = configuracion['grupo']
+
+        # Obtener el grupo
+        grupo, _ = Group.objects.using(db).get_or_create(
+            name=nombre_grupo
+        )
+
+        # Obtener el tipo de contenido
+        content_type = ContentType.objects.using(db).get(
+            app_label=app,
+            model=modelo,
+        )
+
+        # Buscar los permisos del modelo correspondiente
+        permisos = Permission.objects.using(db).filter(
+            content_type_id=content_type.pk,
+            codename__in=permisos_codename,
+        )
+
+        # Asignar los permisos al grupo
+        grupo.permissions.add(*permisos)
+
 
 
 def revertir_permisos(apps, schema_editor):
@@ -60,8 +121,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            asignar_permisos,
-            revertir_permisos
-        )
+        # migrations.RunPython(
+        #     asignar_permisos,
+        #     revertir_permisos
+        # )
     ]

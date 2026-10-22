@@ -10,12 +10,6 @@ groups = [
 def crear_grupo_cliente(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
 
-    groups = [
-        'Administrador',
-        'Empleado',
-        'Cliente'
-    ]
-
     for group in groups:
         Group.objects.using(schema_editor.connection.alias).get_or_create(
             name=group
