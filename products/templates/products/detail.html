@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Detalle de producto</h1>
+
+<p>ID: {{ product.pk }}</p>
+<p>Nombre: {{ product.name }}</p>
+
+<a href="{% url 'products:list' %}">
+    Volver
+</a>
+
+{% endblock %}

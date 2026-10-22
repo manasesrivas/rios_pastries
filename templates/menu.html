@@ -1,0 +1,30 @@
+<nav class="navbar">
+    <a href="{% url 'users:home' %}" class="navbar-brand">
+        Mi sistema
+    </a>
+
+    <ul class="navbar-menu">
+        {% if user.is_authenticated %}
+
+            {% if user.is_superuser or perms.users.view_user %}
+                <li>
+                    <a href="{% url 'users:allUsers' %}">Usuarios</a>
+                </li>
+            {% endif %}
+            {% if user.is_superuser or perms.categories.view_category %}
+                <li>
+                    <a href="{% url 'categories:list' %}">Categorías</a>
+                </li>
+            {% endif %}
+
+            <li>
+                <a href="{% url 'products:list' %}">Productos</a>
+            </li>
+
+            <li>
+                <a href="{% url 'authentication:logout' %}">cerrar sesion</a>
+            </li>
+
+        {% endif %}
+    </ul>
+</nav>

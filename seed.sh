@@ -1,1 +1,3 @@
-python manage.py 
+python manage.py shell
+
+print('hola')

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Detalle de categoría</h1>
+
+<p>ID: {{ category.pk }}</p>
+<p>Nombre: {{ category.name }}</p>
+
+<a href="{% url 'categories:list' %}">
+    Volver
+</a>
+
+{% endblock %}

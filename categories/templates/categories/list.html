@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Lista de categorías</h1>
+
+<a href="{% url 'categories:create' %}">
+    Crear categoría
+</a>
+
+<ul>
+    {% for category in categories %}
+        <li>
+            {{ category.name }}
+
+            <a href="{% url 'categories:detail' category.pk %}">
+                Ver
+            </a>
+
+            <a href="{% url 'categories:update' category.pk %}">
+                Editar
+            </a>
+
+            <a href="{% url 'categories:delete' category.pk %}">
+                Eliminar
+            </a>
+        </li>
+    {% empty %}
+        <li>No hay categorías registradas.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
