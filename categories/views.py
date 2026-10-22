@@ -8,13 +8,13 @@ from django.views.generic import (
     DeleteView,
 )
 
-from .models import Categories
+from .models import Category
 from .forms import CategoriesForm
 
 
 # Listar todas las categorías
 class CategoriesListView(ListView):
-    model = Categories
+    model = Category
     template_name = 'categories/list.html'
     context_object_name = 'categories'
     ordering = ['name']
@@ -22,14 +22,14 @@ class CategoriesListView(ListView):
 
 # Mostrar el detalle de una categoría
 class CategoriesDetailView(DetailView):
-    model = Categories
+    model = Category
     template_name = 'categories/detail.html'
     context_object_name = 'category'
 
 
 # Crear una categoría
 class CategoriesCreateView(CreateView):
-    model = Categories
+    model = Category
     form_class = CategoriesForm
     template_name = 'categories/form.html'
     success_url = reverse_lazy('categories:list')
@@ -37,7 +37,7 @@ class CategoriesCreateView(CreateView):
 
 # Actualizar una categoría
 class CategoriesUpdateView(UpdateView):
-    model = Categories
+    model = Category
     form_class = CategoriesForm
     template_name = 'categories/form.html'
     success_url = reverse_lazy('categories:list')
@@ -45,6 +45,6 @@ class CategoriesUpdateView(UpdateView):
 
 # Eliminar una categoría
 class CategoriesDeleteView(DeleteView):
-    model = Categories
+    model = Category
     template_name = 'categories/confirm_delete.html'
     success_url = reverse_lazy('categories:list')
