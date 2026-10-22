@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 
+
 {% block content %}
+
+{% include 'menu.html' %}
+
 <h1>Lista de producto</h1>
 
 <a href="{% url 'products:create' %}">
