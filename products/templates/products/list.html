@@ -20,13 +20,18 @@
                 Ver
             </a>
 
-            <a href="{% url 'products:update' product.pk %}">
-                Editar
-            </a>
-
-            <a href="{% url 'products:delete' product.pk %}">
-                Eliminar
-            </a>
+            {% if perms.users.change_product %}
+                <a href="{% url 'products:update' product.pk %}">
+                    Editar
+                </a>
+            {% endif %}
+                
+            {% if perms.users.delete_product %}
+                <a href="{% url 'products:delete' product.pk %}">
+                    Eliminar
+                </a>
+            {% endif %}
+            
         </li>
     {% empty %}
         <li>No hay productos registrados.</li>
