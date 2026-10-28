@@ -7,6 +7,7 @@ products = [
         "price": "2.50",
         "category": "Platos fuertes",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Hamburguesa clásica",
@@ -15,6 +16,7 @@ products = [
         "price": "6.75",
         "category": "Platos fuertes",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Pollo a la plancha",
@@ -23,6 +25,7 @@ products = [
         "price": "7.50",
         "category": "Platos fuertes",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Yuca frita",
@@ -31,6 +34,7 @@ products = [
         "price": "3.25",
         "category": "Entradas",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Nachos con queso",
@@ -39,6 +43,7 @@ products = [
         "price": "4.00",
         "category": "Entradas",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Limonada natural",
@@ -47,6 +52,7 @@ products = [
         "price": "1.75",
         "category": "Bebidas",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Horchata",
@@ -55,6 +61,7 @@ products = [
         "price": "1.50",
         "category": "Bebidas",
         "available": True,
+        "stock": 10
     },
     {
         "name": "Pastel de tres leches",
@@ -63,5 +70,6 @@ products = [
         "price": "3.00",
         "category": "Postres",
         "available": False,
+        "stock": 10
     },
 ]
