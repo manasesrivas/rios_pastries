@@ -1,6 +1,6 @@
 from django.db import models
 from orders.models import Order
-# Create your models here.
+from products.models import Product
 
 class DetailOrder(models.Model):
     order = models.ForeignKey(
@@ -10,7 +10,7 @@ class DetailOrder(models.Model):
     )
 
     product = models.ForeignKey(
-        "productos.Product",
+        Product,
         on_delete=models.PROTECT,
         related_name="product"
     )
