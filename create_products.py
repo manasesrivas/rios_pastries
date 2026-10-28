@@ -1,85 +1,15 @@
 from django.db import transaction
-from products.models import Category, Product
-
-productos = [
-    {
-        "name": "Pupusas revueltas (2 unidades)",
-        "image": None,
-        "description": "Pupusas de chicharrón con queso, servidas con curtido y salsa.",
-        "price": "2.50",
-        "category": "Platos fuertes",
-        "available": True,
-    },
-    {
-        "name": "Hamburguesa clásica",
-        "image": None,
-        "description": "Carne de res, queso, lechuga, tomate y papas fritas.",
-        "price": "6.75",
-        "category": "Platos fuertes",
-        "available": True,
-    },
-    {
-        "name": "Pollo a la plancha",
-        "image": None,
-        "description": "Pechuga de pollo a la plancha con arroz y ensalada.",
-        "price": "7.50",
-        "category": "Platos fuertes",
-        "available": True,
-    },
-    {
-        "name": "Yuca frita",
-        "image": None,
-        "description": "Yuca frita con chicharrón y curtido.",
-        "price": "3.25",
-        "category": "Entradas",
-        "available": True,
-    },
-    {
-        "name": "Nachos con queso",
-        "image": None,
-        "description": "Totopos con queso fundido, frijoles y pico de gallo.",
-        "price": "4.00",
-        "category": "Entradas",
-        "available": True,
-    },
-    {
-        "name": "Limonada natural",
-        "image": None,
-        "description": "Limonada fresca preparada al momento.",
-        "price": "1.75",
-        "category": "Bebidas",
-        "available": True,
-    },
-    {
-        "name": "Horchata",
-        "image": None,
-        "description": "Bebida tradicional de morro con canela.",
-        "price": "1.50",
-        "category": "Bebidas",
-        "available": True,
-    },
-    {
-        "name": "Pastel de tres leches",
-        "image": None,
-        "description": "Porción de pastel de tres leches.",
-        "price": "3.00",
-        "category": "Postres",
-        "available": False,
-    },
-]
-
+from products.models import Product
+from utils.products import products
+from categories.models import Category
 
 @transaction.atomic
 def crear_productos():
-    for datos in productos:
+    for datos in products:
         nombre = datos["name"]
 
-        # Crear o recuperar la categoría
-        categoria, creada = Category.objects.get_or_create(
-            name=datos["category"]
-        )
-        if creada:
-            print(f"Categoría creada: {categoria.name}")
+        category = Category.objects.get(name=datos['category'])
+
 
         # Crear o recuperar el producto
         producto, creado = Product.objects.get_or_create(
@@ -88,7 +18,7 @@ def crear_productos():
                 "image": datos["image"],
                 "description": datos["description"],
                 "price": datos["price"],
-                "category": categoria,
+                "category": category,
                 "available": datos["available"],
             },
         )
@@ -99,3 +29,5 @@ def crear_productos():
             print(f"El producto ya existe: {nombre}")
 
     print("Proceso finalizado.")
+
+crear_productos()

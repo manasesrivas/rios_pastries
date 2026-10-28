@@ -32,7 +32,7 @@ class ProductListView(PermissionsClient, ListView):
 
 class ProductDetailView(PermissionsClient, DetailView):
     model = Product
-    template_name = 'product/list.html'
+    template_name = 'products/detail.html'
     context_object_name = 'product'
 
 class ProductCreateView(AdminPermission, CreateView):
