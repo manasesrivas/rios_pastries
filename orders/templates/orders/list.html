@@ -3,12 +3,12 @@
 {% block content %}
 <h1>Listado de pedidos</h1>
 
-<a href="{% url 'orders:create' %}">Crear pedido</a>
+<a href="{% url 'products:list' %}">Crear pedido</a>
 
 <ul>
     {% for order in orders %}
         <li>
-            Pedido #{{ order.pk }} - {{ order.created_at }}
+            Pedido #{{ order.pk }} - {{ order }}
             <a href="{% url 'orders:detail' order.pk %}">Ver</a>
             <a href="{% url 'orders:update' order.pk %}">Editar</a>
         </li>
