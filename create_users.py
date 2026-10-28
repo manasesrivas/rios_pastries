@@ -129,7 +129,7 @@ configuracion_permisos = [
     {
         'app': 'orders',
         'modelo': 'order',
-        'permisos': ['view_order', 'create_order'],
+        'permisos': ['view_order', 'add_order'],
         'grupo': 'Cliente',
     },
 ]

@@ -30,7 +30,6 @@ class OrderListView(PermissionsClient, ListView):
     model = Order
     template_name = 'orders/list.html'
     context_object_name = 'orders'
-    ordering = ['-created_at']
 
 
 class OrderDetailView(PermissionsClient, DetailView):
