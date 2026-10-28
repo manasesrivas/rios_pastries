@@ -38,4 +38,4 @@ class Order(models.Model):
 
 
     def __str__(self):
-        return f"Pedido #{self.pk} - {self.cliente}"
+        return f"Pedido #{self.pk} - {self.user}"
