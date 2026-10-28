@@ -126,6 +126,12 @@ configuracion_permisos = [
         ],
         'grupo': 'Empleado',
     },
+    {
+        'app': 'orders',
+        'modelo': 'order',
+        'permisos': ['view_order', 'create_order'],
+        'grupo': 'Cliente',
+    },
 ]
 
 for configuracion in configuracion_permisos:
