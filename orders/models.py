@@ -1,22 +1,15 @@
 from django.db import models
-
-
 from django.db import models
 from users.models import User
 
 
-class Pedido(models.Model):
-    cliente = models.ForeignKey(
+class Order(models.Model):
+    user = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name="pedidos"
+        related_name="user"
     )
 
-    productos = models.ManyToManyField(
-        "productos.Product",
-        through="DetallePedido",
-        related_name="pedidos"
-    )
 
     subtotal = models.DecimalField(
         max_digits=10,
