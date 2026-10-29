@@ -4,7 +4,18 @@
 <h1>Detalle de pedido</h1>
 
 <p>ID: {{ order.pk }}</p>
-<p>Fecha: {{ order.created_at }}</p>
+<p>Fecha: {{ order.fecha }}</p>
+<h3>Productos encargados:</h3>
+<ul>
+    {% for detalle in order.order.all %}
+        <li>
+            <strong>{{ detalle.product.name }}</strong> - Cantidad: {{ detalle.quantity }} - Precio: ${{ detalle.price }} - Subtotal: ${{ detalle.subtotal }} - Estado: <em>{{ detalle.status.get_name_display|default:detalle.status.name|default:"Pendiente" }}</em>
+        </li>
+    {% empty %}
+        <li>No hay productos en este pedido.</li>
+    {% endfor %}
+</ul>
+<p><strong>Total:</strong> ${{ order.total }}</p>
 
 <a href="{% url 'orders:update' order.pk %}">Editar</a>
 <a href="{% url 'orders:list' %}">Volver</a>
