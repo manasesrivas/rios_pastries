@@ -280,13 +280,34 @@ class OrderViewsTest(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_products_list_view(self):
+    def test_post_crear_y_actualizar_orden(self):
         """
-        La vista de productos para ordenar no requiere permisos
-        especiales (no tiene mixin de permisos).
+        POST a orders:create debe crear la orden si no existe,
+        y si ya existe el producto, aumentar quantity y recalcular totales.
         """
-        response = self.client.get(reverse('orders:products'))
-        self.assertEqual(response.status_code, 200)
+        self.client.login(email='admin@test.com', password='admin123')
+
+        # Primer POST: crea la orden y el detalle (quantity = 1)
+        response = self.client.post(reverse('orders:create'), {'product_id': self.producto.pk})
+        self.assertEqual(response.status_code, 302)
+
+        order = Order.objects.filter(user=self.admin_user).last()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.total, Decimal('100.00'))
+
+        detalle = DetailOrder.objects.filter(order=order, product=self.producto).first()
+        self.assertEqual(detalle.quantity, 1)
+        self.assertEqual(detalle.subtotal, Decimal('100.00'))
+
+        # Segundo POST con el mismo producto: actualiza quantity a 2 y totales a 200.00
+        response2 = self.client.post(reverse('orders:create'), {'product_id': self.producto.pk})
+        self.assertEqual(response2.status_code, 302)
+
+        detalle.refresh_from_db()
+        order.refresh_from_db()
+        self.assertEqual(detalle.quantity, 2)
+        self.assertEqual(detalle.subtotal, Decimal('200.00'))
+        self.assertEqual(order.total, Decimal('200.00'))
 
     def test_usuario_sin_permisos_recibe_403(self):
         """
@@ -320,3 +341,52 @@ class OrderViewsTest(TestCase):
             # El template aún no ha sido creado, pero la vista
             # sí concede acceso (no da 403 ni 302)
             pass
+
+    def test_filtrado_pedidos_por_rol(self):
+        """
+        Verificar que un Cliente solo ve sus propios pedidos,
+        mientras que un Administrador/Cajero ve los de todos.
+        """
+        from django.contrib.auth.models import Group
+
+        # Crear grupo Cliente y usuario cliente
+        grupo_cliente, _ = Group.objects.get_or_create(name='Cliente')
+        cliente_user = User.objects.create_user(
+            email='cliente_rol@test.com',
+            password='password123',
+            nombres='Cliente',
+            apellidos='Test'
+        )
+        cliente_user.groups.add(grupo_cliente)
+        
+        # Asignar permisos de ver y agregar pedidos al cliente (PermissionsClient exige ambos)
+        order_ct = ContentType.objects.get_for_model(Order)
+        permisos = Permission.objects.filter(content_type=order_ct, codename__in=['view_order', 'add_order'])
+        cliente_user.user_permissions.set(permisos)
+
+        # Crear un pedido para este cliente (self.order pertenece a self.admin_user)
+        orden_cliente = Order.objects.create(
+            user=cliente_user,
+            subtotal=Decimal('50.00'),
+            total=Decimal('50.00')
+        )
+
+        # 1. El cliente inicia sesión: solo debe ver SU pedido en la lista
+        self.client.login(email='cliente_rol@test.com', password='password123')
+        response_cliente = self.client.get(reverse('orders:list'))
+        pedidos_cliente = list(response_cliente.context['orders'])
+        self.assertEqual(len(pedidos_cliente), 1)
+        self.assertEqual(pedidos_cliente[0].pk, orden_cliente.pk)
+
+        # Tampoco debe poder ver el detalle del pedido de admin (404)
+        resp_detail_ajeno = self.client.get(reverse('orders:detail', kwargs={'pk': self.order.pk}))
+        self.assertEqual(resp_detail_ajeno.status_code, 404)
+
+        # 2. El admin inicia sesión: debe ver AMBOS pedidos
+        grupo_admin, _ = Group.objects.get_or_create(name='Administrador')
+        self.admin_user.groups.add(grupo_admin)
+
+        self.client.login(email='admin@test.com', password='admin123')
+        response_admin = self.client.get(reverse('orders:list'))
+        pedidos_admin = list(response_admin.context['orders'])
+        self.assertEqual(len(pedidos_admin), 2)
