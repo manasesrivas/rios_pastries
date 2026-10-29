@@ -133,6 +133,20 @@ configuracion_permisos = [
         'permisos': ['view_order', 'add_order'],
         'grupo': 'Cliente',
     },
+    {
+        'app': 'locales',
+        'modelo': 'sala',
+        'permisos': [
+            'add_sala', 'view_sala', 'change_sala', 'delete_sala',
+        ],
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'locales',
+        'modelo': 'sala',
+        'permisos': ['view_sala'],
+        'grupo': 'Cliente',
+    },
 ]
 
 

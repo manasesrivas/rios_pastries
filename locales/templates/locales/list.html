@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% include 'menu.html' %}
+    <a href="{% url 'locales:create' %}">crear local</a>
+    {% for local in locales %}
+        <a href="{% url 'locales:detail' local.pk %}">ver</a>
+        {{ local.nombre }}
+        {{ local.descripcion }}
+        {{ local.capacidad }}
+    {% empty %}
+    <p>no hay salas registradas</p>
+    {% endfor %}
+{% endblock %}
