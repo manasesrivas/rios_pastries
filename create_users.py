@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import transaction
+from colorama import Fore
 
 User = get_user_model()
 
@@ -57,7 +58,7 @@ def crear_usuarios():
             )
             usuario.set_password(datos["password"])
             usuario.save()
-            print(f"Usuario creado: {email}")
+            print(f"Usuario creado: {Fore.GREEN}{email}{Fore.RESET}")
         else:
             print(f"El usuario ya existe: {email}")
 
@@ -134,6 +135,7 @@ configuracion_permisos = [
     },
 ]
 
+
 for configuracion in configuracion_permisos:
     app = configuracion['app']
     modelo = configuracion['modelo']
@@ -160,7 +162,7 @@ for configuracion in configuracion_permisos:
     faltantes = set(permisos_codename) - encontrados
 
     if faltantes:
-        print(f"Permisos no encontrados para {app}.{modelo}: {faltantes}")
+        print(f"{Fore.RED}Permisos no encontrados para {app}.{modelo}: {faltantes}{Fore.RESET}")
         continue
 
     # Asignar permisos al grupo

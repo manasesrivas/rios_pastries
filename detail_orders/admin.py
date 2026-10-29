@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import DetailOrder, Status
 
-# Register your models here.
+admin.site.register(DetailOrder)
+admin.site.register(Status)
