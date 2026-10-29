@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load user_tags %}
 {% block content %}
 <h1>Detalle de producto</h1>
 
@@ -9,5 +9,51 @@
 <a href="{% url 'products:list' %}">
     Volver
 </a>
+
+{% if request.user|has_group:"Cliente" %}
+<form action="{% url 'orders:create' %}" method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.pk }}">
+
+    <div style="margin: 10px 0;">
+        <label for="quantity">Cantidad:</label>
+        <button type="button" id="btn-minus">-</button>
+        <input 
+            type="number" 
+            id="quantity" 
+            name="quantity" 
+            value="1" 
+            min="1" 
+            {% if product.stock %}max="{{ product.stock }}"{% endif %}
+            style="width: 50px; text-align: center;"
+        >
+        <button type="button" id="btn-plus">+</button>
+    </div>
+
+    <button type="submit">encargar</button>
+</form>
+
+<script>
+    const input = document.getElementById('quantity');
+    const btnMinus = document.getElementById('btn-minus');
+    const btnPlus = document.getElementById('btn-plus');
+    const min = parseInt(input.min) || 1;
+    const max = parseInt(input.max) || Infinity;
+
+    btnMinus.addEventListener('click', () => {
+        let val = parseInt(input.value) || 1;
+        if (val > min) {
+            input.value = val - 1;
+        }
+    });
+
+    btnPlus.addEventListener('click', () => {
+        let val = parseInt(input.value) || 1;
+        if (val < max) {
+            input.value = val + 1;
+        }
+    });
+</script>
+{% endif %}
 
 {% endblock %}
