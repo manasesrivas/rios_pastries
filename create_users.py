@@ -134,17 +134,17 @@ configuracion_permisos = [
         'grupo': 'Cliente',
     },
     {
-        'app': 'locales',
-        'modelo': 'sala',
+        'app': 'venues',
+        'modelo': 'venue',
         'permisos': [
-            'add_sala', 'view_sala', 'change_sala', 'delete_sala',
+            'add_venue', 'view_venue', 'change_venue', 'delete_venue',
         ],
         'grupo': 'Administrador',
     },
     {
-        'app': 'locales',
-        'modelo': 'sala',
-        'permisos': ['view_sala'],
+        'app': 'venues',
+        'modelo': 'venue',
+        'permisos': ['view_venue'],
         'grupo': 'Cliente',
     },
 ]
