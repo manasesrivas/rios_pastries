@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<form action="{% url 'locales:delete' %}" method="post">
+<form method="post">
     {% csrf_token %}
     <button>eliminar</button>
 </form>

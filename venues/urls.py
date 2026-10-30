@@ -1,19 +1,19 @@
 from django.urls import path
 from .views import (
-    SalaListView,
-    SalaDetailView,
-    SalaCreateView,
-    SalaUpdateView,
-    SalaDeleteView,
+    VenueListView,
+    VenueDetailView,
+    VenueCreateView,
+    VenueUpdateView,
+    VenueDeleteView,
 )
 
-app_name = 'locales'
+app_name = 'venues'
 
 urlpatterns = [
-    path('', SalaListView.as_view(), name='list'),
-    path('<int:pk>/', SalaDetailView.as_view(), name='detail'),
-    path('create/', SalaCreateView.as_view(), name='create'),
-    path('update/<int:pk>', SalaUpdateView.as_view(), name='update'),
-    path('delete/<int:pk>', SalaDeleteView.as_view(), name='delete'),
+    path('', VenueListView.as_view(), name='list'),
+    path('<int:pk>/', VenueDetailView.as_view(), name='detail'),
+    path('create/', VenueCreateView.as_view(), name='create'),
+    path('update/<int:pk>', VenueUpdateView.as_view(), name='update'),
+    path('delete/<int:pk>', VenueDeleteView.as_view(), name='delete'),
 ]
 

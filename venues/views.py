@@ -7,55 +7,54 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from .models import Sala
+from .models import Venue
 
 
 class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
-    permission_required = 'locales.view_sala'
+    permission_required = 'venues.view_venue'
     raise_exception = True
 
 
 class AdminPermission(LoginRequiredMixin, PermissionRequiredMixin):
     permission_required = [
-        'locales.view_sala',
-        'locales.add_sala',
-        'locales.change_sala',
-        'locales.delete_sala',
+        'venues.view_venue',
+        'venues.add_venue',
+        'venues.change_venue',
+        'venues.delete_venue',
     ]
     raise_exception = True
 
 
-class SalaListView(PermissionsClient, ListView):
-    model = Sala
-    template_name = 'locales/list.html'
-    context_object_name = 'locales'
-    ordering = ['nombre']
+class VenueListView(PermissionsClient, ListView):
+    model = Venue
+    template_name = 'venues/list.html'
+    context_object_name = 'venues'
+    ordering = ['name']
 
 
-class SalaDetailView(PermissionsClient, DetailView):
-    model = Sala
-    template_name = 'locales/detail.html'
-    context_object_name = 'local'
+class VenueDetailView(PermissionsClient, DetailView):
+    model = Venue
+    template_name = 'venues/detail.html'
+    context_object_name = 'venue'
 
 
-class SalaCreateView(AdminPermission, CreateView):
-    model = Sala
-    fields = ['nombre', 'imagen', 'direccion', 'descripcion', 'capacidad', 'estado']
-    template_name = 'locales/form.html'
-    success_url = reverse_lazy('locales:list')
+class VenueCreateView(AdminPermission, CreateView):
+    model = Venue
+    fields = ['name', 'imagen', 'address', 'descripcion', 'capacity', 'status']
+    template_name = 'venues/form.html'
+    success_url = reverse_lazy('venues:list')
 
 
-class SalaUpdateView(AdminPermission, UpdateView):
-    model = Sala
-    fields = ['nombre', 'imagen', 'direccion', 'descripcion', 'capacidad', 'estado']
-    template_name = 'locales/form.html'
-    success_url = reverse_lazy('locales:list')
-    context_object_name = 'local'
+class VenueUpdateView(AdminPermission, UpdateView):
+    model = Venue
+    fields = ['name', 'imagen', 'address', 'descripcion', 'capacity', 'status']
+    template_name = 'venues/form.html'
+    success_url = reverse_lazy('venues:list')
+    context_object_name = 'venue'
 
 
-class SalaDeleteView(AdminPermission, DeleteView):
-    model = Sala
-    template_name = 'locales/confirm_delete.html'
-    success_url = reverse_lazy('locales:list')
-
+class VenueDeleteView(AdminPermission, DeleteView):
+    model = Venue
+    template_name = 'venues/confirm_delete.html'
+    success_url = reverse_lazy('venues:list')
 
