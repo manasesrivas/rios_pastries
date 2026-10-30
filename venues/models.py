@@ -9,7 +9,6 @@ class Venue(models.Model):
     imagen = models.URLField(max_length=500, blank=True, null=True)
     address = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True, null=True)
-    capacity = models.PositiveIntegerField()
     status = models.CharField(
         max_length=20,
         choices=StateVenue.choices,
