@@ -1,5 +1,5 @@
 from django.db import models
-from locales.models import Sala
+from venues.models import Venue
 from users.models import User
 
 class EstadoReservacion(models.TextChoices):
@@ -17,7 +17,7 @@ class Reservation(models.Model):
 
     cantidad_personas = models.PositiveIntegerField()
     sala = models.ForeignKey(
-        Sala,
+        Venue,
         on_delete=models.PROTECT,
         related_name='reservations'
     )
