@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Salas
+{% endblock %}
+
+{% block content %}
+    {% include 'menu.html' %}
+
+    <h1>
+        {% if perms.halls.change_hall %}
+            Todas las salas
+        {% else %}
+            Salas disponibles
+        {% endif %}
+    </h1>
+
+    {% if perms.halls.add_hall %}
+        <a href="{% url 'halls:create' %}">Crear sala</a>
+    {% endif %}
+
+    <ul>
+        {% for hall in halls %}
+            <li>
+                {% if hall.image %}
+                    <img src="{{ hall.image }}" alt="{{ hall.name }}" width="120">
+                {% endif %}
+                <a href="{% url 'halls:detail' hall.pk %}">{{ hall.name }}</a>
+                - {{ hall.venue.name }} -
+                Capacidad: {{ hall.capacity }} -
+                Precio: {{ hall.price }} -
+                Estado: {{ hall.get_status_display }}
+            </li>
+        {% empty %}
+            <li>No hay salas disponibles.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

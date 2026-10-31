@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% include 'menu.html' %}
+
+    <h1>Eliminar sala</h1>
+    <p>¿Seguro que deseas eliminar "{{ hall.name }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirmar eliminación</button>
+    </form>
+    <a href="{% url 'halls:detail' hall.pk %}">Cancelar</a>
+{% endblock %}

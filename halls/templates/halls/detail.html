@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% include 'menu.html' %}
+
+    <h1>{{ hall.name }}</h1>
+    {% if hall.image %}
+        <img src="{{ hall.image }}" alt="{{ hall.name }}" width="400">
+    {% endif %}
+    <p>Local: {{ hall.venue.name }}</p>
+    <p>Capacidad: {{ hall.capacity }}</p>
+    <p>Precio: {{ hall.price }}</p>
+    <p>Estado: {{ hall.get_status_display }}</p>
+
+    {% if perms.halls.change_hall %}
+        <a href="{% url 'halls:update' hall.pk %}">Editar</a>
+    {% endif %}
+    {% if perms.halls.delete_hall %}
+        <a href="{% url 'halls:delete' hall.pk %}">Eliminar</a>
+    {% endif %}
+    <a href="{% url 'halls:list' %}">Volver a salas</a>
+{% endblock %}

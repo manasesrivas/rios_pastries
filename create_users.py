@@ -142,6 +142,22 @@ configuracion_permisos = [
         'grupo': 'Administrador',
     },
     {
+        'app': 'halls',
+        'modelo': 'hall',
+        'permisos': [
+            'add_hall', 'view_hall', 'change_hall', 'delete_hall',
+        ],
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'halls',
+        'modelo': 'hall',
+        'permisos': [
+            'view_hall'
+        ],
+        'grupo': 'Cliente',
+    },
+    {
         'app': 'venues',
         'modelo': 'venue',
         'permisos': ['view_venue'],
