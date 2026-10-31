@@ -134,6 +134,12 @@ configuracion_permisos = [
         'grupo': 'Cliente',
     },
     {
+        'app': 'orders',
+        'modelo': 'order',
+        'permisos': ['view_order', 'add_order', 'change_order', 'delete_order'],
+        'grupo': 'Administrador',
+    },
+    {
         'app': 'venues',
         'modelo': 'venue',
         'permisos': [
