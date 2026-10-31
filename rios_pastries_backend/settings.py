@@ -47,7 +47,12 @@ INSTALLED_APPS = [
     'venues',
     'halls',
     'reservations',
+    # ===== django-tailwind =======
+    'tailwind',
+    'theme',
 ]
+
+TAILWIND_APP_NAME = 'theme'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
