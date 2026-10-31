@@ -40,14 +40,14 @@ class VenueDetailView(PermissionsClient, DetailView):
 
 class VenueCreateView(AdminPermission, CreateView):
     model = Venue
-    fields = ['name', 'imagen', 'address', 'descripcion', 'capacity', 'status']
+    fields = ['name', 'imagen', 'address', 'descripcion']
     template_name = 'venues/form.html'
     success_url = reverse_lazy('venues:list')
 
 
 class VenueUpdateView(AdminPermission, UpdateView):
     model = Venue
-    fields = ['name', 'imagen', 'address', 'descripcion', 'capacity', 'status']
+    fields = ['name', 'imagen', 'address', 'descripcion', 'status']
     template_name = 'venues/form.html'
     success_url = reverse_lazy('venues:list')
     context_object_name = 'venue'
