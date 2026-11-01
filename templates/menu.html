@@ -1,8 +1,9 @@
 {% load static %}
+{% load user_tags %}
 <nav class="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
     <ul class="mx-auto flex w-full max-w-7xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
         {% if user.is_authenticated %}
-        
+
             <li class="shrink-0">
                 <a href="{% url 'users:home' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
                     <span aria-hidden="true">
@@ -12,9 +13,9 @@
                 </a>
             </li>
 
-            {% if user.is_superuser or perms.users.view_user %}
+            {% if user.is_superuser or perms.users.view_user and not user|has_group:"Cliente" %}
                 <li class="shrink-0">
-                    <a href="{% url 'users:allUsers' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <a href="{% url 'users:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
                         <span aria-hidden="true">
                             <img src="{% static 'assets/users.svg' %}" alt="">
                         </span>
@@ -32,6 +33,8 @@
                     </a>
                 </li>
             {% endif %}
+
+            {% if user.is_superuser or perms.venues.view_venue and not user|has_group:"Cliente" %}
             <li class="shrink-0">
                 <a href="{% url 'venues:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
                     <span aria-hidden="true">
@@ -40,6 +43,7 @@
                     Locales
                 </a>
             </li>
+            {% endif %}
             <li class="shrink-0">
                 <a href="{% url 'halls:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
                     <span aria-hidden="true">
@@ -56,6 +60,15 @@
                     Pedidos
                 </a>
             </li>
+            <li class="shrink-0">
+                <a href="#" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/reservations.svg' %}" alt="">
+                    </span>
+                    Reservaciones
+                </a>
+            </li>
+
             <li class="shrink-0">
                 <a href="{% url 'products:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
                     <span aria-hidden="true">

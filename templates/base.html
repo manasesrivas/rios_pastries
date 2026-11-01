@@ -66,6 +66,9 @@
                     <h4 class="truncate text-sm font-semibold text-gray-900 dark:text-white">
                         {{ request.user.nombres }} {{ request.user.apellidos }}
                     </h4>
+                    <a href="{% url 'users:profile' %}" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        Ver mi perfil
+                    </a>
                     <p class="mt-1 flex flex-wrap items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
                         <span>Grupo:</span>
                         {% for group in request.user.groups.all %}

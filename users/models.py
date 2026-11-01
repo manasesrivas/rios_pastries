@@ -39,6 +39,10 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    class Estado(models.TextChoices):
+        ACTIVO = 'activo', 'Activo'
+        ELIMINADO = 'eliminado', 'Eliminado'
+
     nombres = models.CharField(max_length=100, null=True, blank=True)
     apellidos = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=9, null=True, blank=True)
@@ -46,6 +50,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    estado = models.CharField(
+        max_length=10,
+        choices=Estado.choices,
+        default=Estado.ACTIVO,
+    )
 
     objects = UserManager()
 
