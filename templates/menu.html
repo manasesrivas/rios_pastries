@@ -1,44 +1,77 @@
-<nav class="navbar">
-    <a href="{% url 'users:home' %}" class="navbar-brand">
-        Mi sistema
-    </a>
-
-    <ul class="navbar-menu">
+{% load static %}
+<nav class="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+    <ul class="mx-auto flex w-full max-w-7xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
         {% if user.is_authenticated %}
-
-            {% if user.is_superuser or perms.users.view_user %}
-                <li>
-                    <a href="{% url 'users:allUsers' %}">Usuarios</a>
-                </li>
-            {% endif %}
-            {% if user.is_superuser or perms.categories.view_category %}
-                <li>
-                    <a href="{% url 'categories:list' %}">Categorías</a>
-                </li>
-            {% endif %}
-
-            <li>
-                <a href="{% url 'venues:list' %}">
-                    locales
+        
+            <li class="shrink-0">
+                <a href="{% url 'users:home' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/home.svg' %}" alt="">
+                    </span>
+                    Inicio
                 </a>
             </li>
 
-            <li>
-                <a href="{% url 'halls:list' %}">Salas disponibles</a>
+            {% if user.is_superuser or perms.users.view_user %}
+                <li class="shrink-0">
+                    <a href="{% url 'users:allUsers' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                        <span aria-hidden="true">
+                            <img src="{% static 'assets/users.svg' %}" alt="">
+                        </span>
+                        Usuarios
+                    </a>
+                </li>
+            {% endif %}
+            {% if user.is_superuser or perms.categories.view_category %}
+                <li class="shrink-0">
+                    <a href="{% url 'categories:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                        <span aria-hidden="true">
+                            <img src="{% static 'assets/categories.svg' %}" alt="">
+                        </span>
+                        Categorías
+                    </a>
+                </li>
+            {% endif %}
+            <li class="shrink-0">
+                <a href="{% url 'venues:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/venues.svg' %}" alt="">
+                    </span>
+                    Locales
+                </a>
             </li>
-
-            <li>
-                <a href="{% url 'orders:list' %}">Pedidos</a>
+            <li class="shrink-0">
+                <a href="{% url 'halls:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/halls.svg' %}" alt="">
+                    </span>
+                    Salas disponibles
+                </a>
             </li>
-
-            <li>
-                <a href="{% url 'products:list' %}">Productos</a>
+            <li class="shrink-0">
+                <a href="{% url 'orders:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/orders.svg' %}" alt="">
+                    </span>
+                    Pedidos
+                </a>
             </li>
-
-            <li>
-                <a href="{% url 'authentication:logout' %}">cerrar sesion</a>
+            <li class="shrink-0">
+                <a href="{% url 'products:list' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/products.svg' %}" alt="">
+                    </span>
+                    Productos
+                </a>
             </li>
-
+            <li class="shrink-0">
+                <a href="{% url 'authentication:logout' %}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
+                    <span aria-hidden="true">
+                        <img src="{% static 'assets/logout.svg' %}" alt="">
+                    </span>
+                    Cerrar sesión
+                </a>
+            </li>
         {% endif %}
     </ul>
 </nav>

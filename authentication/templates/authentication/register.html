@@ -1,25 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>login</title>
-</head>
-<body>
-    <form action="{% url 'authentication:register' %}" method="POST">
+{% extends 'base.html' %}
 
-        {% csrf_token %}
+{% block title %}
+    Crear cuenta
+{% endblock %}
 
-        {% if form.non_field_errors %}
-            <div class="error">
-                {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
+{% block content %}
+    <div class="flex min-h-[80vh] items-center justify-center px-4 py-12">
+        <form action="{% url 'authentication:register' %}" method="post"
+              class="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
+            {% csrf_token %}
+
+            <div class="space-y-2 text-center">
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+                    Crear cuenta
+                </h1>
+                <p class="text-sm text-gray-600">Regístrate para comenzar</p>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="space-y-5">
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-gray-700">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="mt-2 text-xs text-gray-500">{{ field.help_text|safe }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 {% endfor %}
             </div>
-        {% endif %}
 
-        {{ form.as_div }}
-        <button>registrar</button>
-    </form>
-</body>
-</html>
+            <button type="submit"
+                    class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                Crear cuenta
+            </button>
+
+            <p class="text-center text-sm text-gray-600">
+                ¿Ya tienes cuenta?
+                <a href="{% url 'authentication:login' %}"
+                   class="font-semibold text-indigo-600 hover:text-indigo-500">
+                    Iniciar sesión
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}
