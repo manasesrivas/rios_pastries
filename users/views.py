@@ -26,31 +26,23 @@ class BasicConfiguration(LoginRequiredMixin, PermissionRequiredMixin):
     raise_exception = True
 
 
-class TodosUsuariosView(BasicConfiguration, ListView):
+class UserListView(BasicConfiguration, ListView):
     model = User
     template_name = 'users/index.html'
+    name_object_name = 'users'
 
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs)
-
-class AgregarUsuario(BasicConfiguration, CreateView):
+class UserCreateView(BasicConfiguration, CreateView):
     form_class = UserModelForm
     template_name = 'users/add_user_form.html'
     success_url = reverse_lazy('users:allUsers')
 
 
     
-class UserUpdate(BasicConfiguration, UpdateView):
+class UserUpdateView(BasicConfiguration, UpdateView):
     model = User
     form_class = UserUpdateForm
     template_name = 'users/update.html'
     context_object_name = 'user'
     success_url = reverse_lazy('users:allUsers')
-    permission_required = [
-        'users.add_user',
-        'users.view_user',
-        'users.change_user',
-        'users.delete_user',
-    ]
 
 
