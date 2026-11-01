@@ -33,7 +33,7 @@ class UserListView(BasicConfiguration, ListView):
 
 class UserCreateView(BasicConfiguration, CreateView):
     form_class = UserModelForm
-    template_name = 'users/add_user_form.html'
+    template_name = 'users/form.html'
     success_url = reverse_lazy('users:allUsers')
 
 
