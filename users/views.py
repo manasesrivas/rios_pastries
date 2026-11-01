@@ -28,7 +28,7 @@ class BasicConfiguration(LoginRequiredMixin, PermissionRequiredMixin):
 
 class UserListView(BasicConfiguration, ListView):
     model = User
-    template_name = 'users/index.html'
+    template_name = 'users/list.html'
     name_object_name = 'users'
 
 class UserCreateView(BasicConfiguration, CreateView):
