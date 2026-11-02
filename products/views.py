@@ -15,13 +15,6 @@ class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
     raise_exception = True
 
 class AdminPermission(LoginRequiredMixin, PermissionRequiredMixin):
-    permission_required = [
-        'products.view_product',
-        'products.add_product',
-        'products.change_product',
-        'products.delete_product',
-    ]
-
     raise_exception = True
 
 class ProductListView(PermissionsClient, ListView):
@@ -36,18 +29,24 @@ class ProductDetailView(PermissionsClient, DetailView):
     context_object_name = 'product'
 
 class ProductCreateView(AdminPermission, CreateView):
+    permission_required = 'products.add_product'
     model = Product
     form_class = ProductForm
     template_name = 'products/form.html'
+    context_object_name = 'product'
     success_url = reverse_lazy('products:list')
 
 class ProductUpdateView(AdminPermission, UpdateView):
+    permission_required = 'products.change_product'
     model = Product
     form_class = ProductForm
     template_name = 'products/form.html'
+    context_object_name = 'product'
     success_url = reverse_lazy('products:list')
 
 class ProductDeleteView(AdminPermission, DeleteView):
+    permission_required = 'products.delete_product'
     model = Product
     template_name = 'products/confirm_delete.html'
+    context_object_name = 'product'
     success_url = reverse_lazy('products:list')
