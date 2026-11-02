@@ -11,9 +11,12 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -50,6 +53,9 @@ INSTALLED_APPS = [
     # ===== django-tailwind =======
     'tailwind',
     'theme',
+    # === cloudinary =====
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -155,3 +161,11 @@ MAILERS = {
 AUTH_USER_MODEL = 'users.User'
 
 LOGIN_URL = '/'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', ''),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
