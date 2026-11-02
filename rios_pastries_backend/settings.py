@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne', # administra peticiones ASGI/websocket
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,7 +57,23 @@ INSTALLED_APPS = [
     # === cloudinary =====
     'cloudinary_storage',
     'cloudinary',
+    # === websocket ======
+    'channels',
 ]
+
+# punto de entrada ASGI
+ASGI_APPLICATION = 'rios_pastries_backend.asgi.application'
+
+# configuracion de channel layer (redis)
+CHANNEL_LAYERS = {
+    'default': {
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'CONFIG': {
+        #     'hosts': [('127.0.0.1', 6379)]
+        # }
+    }
+}
 
 TAILWIND_APP_NAME = 'theme'
 

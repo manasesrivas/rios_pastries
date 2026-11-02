@@ -3,9 +3,15 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from channels.testing import WebsocketCommunicator
 from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from orders.models import Order
+from orders.consumers import NoticationsConsumer
 from products.models import Product
 from categories.models import Category
 from detail_orders.models import DetailOrder
@@ -43,6 +49,12 @@ class OrderModelTest(TestCase):
             total=Decimal('116.00'),
             direccion='Calle Falsa 123',
         )
+
+    def test_pago_y_entrega_son_requeridos(self):
+        for field_name in ('metodo_pago', 'tipo_entrega'):
+            field = Order._meta.get_field(field_name)
+            self.assertFalse(field.blank)
+            self.assertFalse(field.has_default())
 
     def test_order_creation(self):
         """Verificar que la orden se crea correctamente."""
@@ -264,6 +276,33 @@ class OrderViewsTest(TestCase):
         response = self.client.get(reverse('orders:list'))
         self.assertEqual(response.status_code, 200)
 
+    def test_list_view_muestra_suma_de_unidades_encargadas(self):
+        self.client.login(email='admin@test.com', password='admin123')
+        DetailOrder.objects.create(
+            order=self.order,
+            product=self.producto,
+            quantity=3,
+            price=Decimal('100.00'),
+            subtotal=Decimal('300.00'),
+        )
+
+        response = self.client.get(reverse('orders:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['orders'][0].product_quantity, 3)
+        self.assertContains(response, 'Productos encargados: 3 unidades')
+
+    def test_list_view_muestra_pago_y_tipo_de_entrega(self):
+        self.order.metodo_pago = Order.MetodoPago.TARJETA
+        self.order.tipo_entrega = Order.TipoEntrega.RECOGER
+        self.order.save()
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.get(reverse('orders:list'))
+
+        self.assertContains(response, 'Pago: Tarjeta')
+        self.assertContains(response, 'Entrega: Recoger en tienda')
+
     def test_detail_view_con_login(self):
         """Ver el detalle de una orden existente."""
         self.client.login(email='admin@test.com', password='admin123')
@@ -308,6 +347,28 @@ class OrderViewsTest(TestCase):
         self.assertEqual(detalle.quantity, 2)
         self.assertEqual(detalle.subtotal, Decimal('200.00'))
         self.assertEqual(order.total, Decimal('200.00'))
+
+    def test_adding_product_notifies_existing_order_after_commit(self):
+        self.client.login(email='admin@test.com', password='admin123')
+
+        with patch('orders.views.publish_order_update') as publish_order_update:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(
+                    reverse('orders:create'),
+                    {'product_id': self.producto.pk, 'quantity': 3},
+                )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Order.objects.filter(user=self.admin_user).count(), 1)
+        detail = DetailOrder.objects.get(order=self.order, product=self.producto)
+        self.assertEqual(detail.quantity, 3)
+        self.assertEqual(self.order.pk, detail.order_id)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.total, Decimal('300.00'))
+        publish_order_update.assert_called_once_with(
+            self.order.pk,
+            self.producto.name,
+        )
 
     def test_usuario_sin_permisos_recibe_403(self):
         """
@@ -390,3 +451,41 @@ class OrderViewsTest(TestCase):
         response_admin = self.client.get(reverse('orders:list'))
         pedidos_admin = list(response_admin.context['orders'])
         self.assertEqual(len(pedidos_admin), 2)
+
+
+class OrderNotificationConsumerTests(TestCase):
+    def test_order_manager_receives_product_added_to_order_event(self):
+        async def verify_notification():
+            communicator = WebsocketCommunicator(
+                NoticationsConsumer.as_asgi(),
+                '/ws/notificaciones/',
+            )
+            communicator.scope['user'] = SimpleNamespace(
+                is_authenticated=True,
+                is_superuser=False,
+                is_staff=True,
+            )
+
+            connected, _ = await communicator.connect()
+            self.assertTrue(connected)
+
+            await get_channel_layer().group_send(
+                'order_administrators',
+                {
+                    'type': 'order_updated',
+                    'order_id': 42,
+                    'product_name': 'Pastel de prueba',
+                },
+            )
+            message = await communicator.receive_json_from()
+            self.assertEqual(
+                message,
+                {
+                    'type': 'order_updated',
+                    'order_id': 42,
+                    'product_name': 'Pastel de prueba',
+                },
+            )
+            await communicator.disconnect()
+
+        async_to_sync(verify_notification)()
