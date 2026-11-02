@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Carrito | Ríos Pastries{% endblock %}
+
+{% block content %}
+<section class="cart-page">
+    <header class="cart-page__header">
+        <div>
+            <h1>Tu carrito</h1>
+            <p>Revisa los productos que quieres encargar.</p>
+        </div>
+        <a class="cart-page__back" href="{% url 'products:list' %}">Seguir comprando</a>
+    </header>
+
+    {% if items %}
+        <div class="cart-table-wrap">
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Imagen</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Cantidad</th>
+                        <th scope="col">Precio</th>
+                        <th scope="col">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td data-label="Imagen">
+                                {% if item.product.image %}
+                                    <img class="cart-table__image" src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                {% else %}
+                                    <span class="cart-table__placeholder">Sin imagen</span>
+                                {% endif %}
+                            </td>
+                            <th scope="row" data-label="Nombre">{{ item.product.name }}</th>
+                            <td data-label="Cantidad">{{ item.quantity }}</td>
+                            <td data-label="Precio">${{ item.product.price|floatformat:"2u" }}</td>
+                            <td data-label="Total">${{ item.total|floatformat:"2u" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" scope="row">Total del carrito</th>
+                        <td>${{ cart_total|floatformat:"2u" }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <form class="cart-page__checkout" action="{% url 'orders:cart_checkout' %}" method="post">
+            {% csrf_token %}
+            <span>Total a encargar: <strong>${{ cart_total|floatformat:"2u" }}</strong></span>
+            <button type="submit">Encargar</button>
+        </form>
+    {% else %}
+        <div class="cart-page__empty">
+            <p>Tu carrito está vacío.</p>
+            <a href="{% url 'products:list' %}">Explorar productos</a>
+        </div>
+    {% endif %}
+</section>
+
+<style>
+    .cart-page {
+        width: min(100% - 2rem, 72rem);
+        margin: 0 auto;
+        padding: 2rem 0 3rem;
+    }
+
+    .cart-page__header,
+    .cart-page__checkout {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .cart-page__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .cart-page__header h1 {
+        margin: 0;
+        font-size: 1.875rem;
+        font-weight: 700;
+    }
+
+    .cart-page__header p {
+        margin: 0.375rem 0 0;
+        color: #6b7280;
+    }
+
+    .cart-page__back,
+    .cart-page__empty a {
+        color: #4f46e5;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .cart-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background: #fff;
+    }
+
+    .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .cart-table th,
+    .cart-table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cart-table thead,
+    .cart-table tfoot {
+        background: #f9fafb;
+        font-weight: 700;
+    }
+
+    .cart-table__image,
+    .cart-table__placeholder {
+        display: grid;
+        width: 4rem;
+        height: 4rem;
+        place-items: center;
+        border-radius: 0.5rem;
+        background: #f3f4f6;
+        object-fit: cover;
+    }
+
+    .cart-table__placeholder {
+        color: #6b7280;
+        font-size: 0.7rem;
+        text-align: center;
+    }
+
+    .cart-page__checkout {
+        margin-top: 1.25rem;
+        justify-content: flex-end;
+    }
+
+    .cart-page__checkout button {
+        min-height: 2.75rem;
+        border: 0;
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        background: #4f46e5;
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .cart-page__checkout button:hover {
+        background: #4338ca;
+    }
+
+    .cart-page__empty {
+        border: 1px dashed #d1d5db;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        color: #6b7280;
+        text-align: center;
+    }
+
+    .dark .cart-page__header p,
+    .dark .cart-table__placeholder {
+        color: #d1d5db;
+    }
+
+    .dark .cart-page__back,
+    .dark .cart-page__empty a {
+        color: #a5b4fc;
+    }
+
+    .dark .cart-table-wrap {
+        border-color: #374151;
+        background: #111827;
+    }
+
+    .dark .cart-table th,
+    .dark .cart-table td {
+        border-color: #374151;
+    }
+
+    .dark .cart-table thead,
+    .dark .cart-table tfoot,
+    .dark .cart-table__image,
+    .dark .cart-table__placeholder {
+        background: #1f2937;
+    }
+
+    .dark .cart-page__empty {
+        border-color: #4b5563;
+        color: #d1d5db;
+    }
+
+    @media (max-width: 640px) {
+        .cart-page__header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .cart-table thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+        }
+
+        .cart-table,
+        .cart-table tbody,
+        .cart-table tr,
+        .cart-table td,
+        .cart-table th {
+            display: block;
+            width: 100%;
+        }
+
+        .cart-table tbody tr {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .cart-table tbody td,
+        .cart-table tbody th {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 0;
+            padding: 0.5rem 0;
+            text-align: right;
+        }
+
+        .cart-table tbody td::before,
+        .cart-table tbody th::before {
+            content: attr(data-label);
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .cart-table tbody td:first-child {
+            justify-content: flex-start;
+        }
+
+        .cart-table tbody td:first-child::before {
+            display: none;
+        }
+
+        .cart-table tfoot tr {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .cart-table tfoot th,
+        .cart-table tfoot td {
+            width: auto;
+            border: 0;
+        }
+
+        .dark .cart-table tbody tr {
+            border-color: #374151;
+        }
+
+        .cart-page__checkout {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}

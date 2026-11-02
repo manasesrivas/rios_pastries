@@ -4,40 +4,40 @@
 {% block title %}{{ product.name }} | Productos{% endblock %}
 
 {% block content %}
-<section class="product-detail">
-    <nav class="product-detail__breadcrumb" aria-label="Navegación">
-        <a href="{% url 'products:list' %}">Volver a productos</a>
+<section class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <nav class="mb-5 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-label="Navegación">
+        <a class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300" href="{% url 'products:list' %}">Volver a productos</a>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">{{ product.name }}</span>
+        <span class="break-words" aria-current="page">{{ product.name }}</span>
     </nav>
 
-    <article class="product-detail__card">
-        <div class="product-detail__media">
+    <article class="grid overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-2">
+        <div class="aspect-[4/3] bg-gray-100 dark:bg-gray-800 lg:aspect-auto lg:min-h-[32rem]">
             {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                <img class="h-full w-full object-cover" src="{{ product.image.url }}" alt="{{ product.name }}">
             {% else %}
-                <div class="product-detail__placeholder" role="img" aria-label="Imagen no disponible para {{ product.name }}">
+                <div class="flex h-full min-h-64 items-center justify-center px-6 text-center text-sm text-gray-500 dark:text-gray-400 lg:min-h-[32rem]" role="img" aria-label="Imagen no disponible para {{ product.name }}">
                     <span>Imagen no disponible</span>
                 </div>
             {% endif %}
         </div>
 
-        <div class="product-detail__content">
-            <p class="product-detail__category">{{ product.category.name }}</p>
-            <div class="product-detail__title-row">
-                <h1>{{ product.name }}</h1>
-                <span class="product-detail__availability {% if product.available %}is-available{% else %}is-unavailable{% endif %}">
+        <div class="flex min-w-0 flex-col p-5 sm:p-8 lg:p-10">
+            <p class="mb-3 text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{{ product.category.name }}</p>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <h1 class="min-w-0 break-words text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">{{ product.name }}</h1>
+                <span class="w-fit shrink-0 rounded-full px-3 py-1 text-xs font-semibold {% if product.available %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% else %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% endif %}">
                     {% if product.available %}Disponible{% else %}No disponible{% endif %}
                 </span>
             </div>
 
-            <p class="product-detail__price">${{ product.price|floatformat:"2u" }}</p>
-            <p class="product-detail__description">
+            <p class="mt-5 text-3xl font-bold text-indigo-700 dark:text-indigo-300">${{ product.price|floatformat:"2u" }}</p>
+            <p class="mt-4 whitespace-pre-line leading-7 text-gray-600 dark:text-gray-300">
                 {{ product.description|default:"Este producto todavía no tiene una descripción." }}
             </p>
 
-            <div class="product-detail__stock">
-                <span class="product-detail__stock-indicator {% if product.stock > 0 %}is-in-stock{% else %}is-out-of-stock{% endif %}" aria-hidden="true"></span>
+            <div class="mt-6 flex items-center gap-2 text-sm font-medium {% if product.stock > 0 %}text-green-700 dark:text-green-400{% else %}text-red-700 dark:text-red-400{% endif %}">
+                <span class="h-2.5 w-2.5 rounded-full {% if product.stock > 0 %}bg-green-500{% else %}bg-red-500{% endif %}" aria-hidden="true"></span>
                 {% if product.stock > 0 %}
                     {{ product.stock }} {% if product.stock == 1 %}unidad disponible{% else %}unidades disponibles{% endif %}
                 {% else %}
@@ -46,30 +46,31 @@
             </div>
 
             {% if perms.products.change_product or perms.products.delete_product %}
-                <div class="product-detail__management" aria-label="Acciones del producto">
+                <div class="mt-6 flex flex-wrap gap-3" aria-label="Acciones del producto">
                     {% if perms.products.change_product %}
-                        <a class="product-detail__management-link" href="{% url 'products:update' product.pk %}">
+                        <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900" href="{% url 'products:update' product.pk %}">
                             Actualizar producto
                         </a>
                     {% endif %}
                     {% if perms.products.delete_product %}
-                        <a class="product-detail__management-link is-danger" href="{% url 'products:delete' product.pk %}">
+                        <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900" href="{% url 'products:delete' product.pk %}">
                             Eliminar producto
                         </a>
                     {% endif %}
                 </div>
             {% endif %}
 
-            {% if request.user|has_group:"Cliente" %}
-                <form class="product-detail__order" action="{% url 'orders:create' %}" method="post">
+            {% if request.user|has_group:"Cliente" and product.available and product.stock > 0 %}
+                <form class="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700" action="{% url 'orders:create' %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.pk }}">
 
-                    <label for="quantity">Cantidad</label>
-                    <div class="product-detail__order-controls">
-                        <div class="product-detail__quantity">
-                            <button type="button" id="btn-minus" aria-label="Reducir cantidad">-</button>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="quantity">Cantidad</label>
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <div class="flex min-h-12 w-fit overflow-hidden rounded-lg border border-gray-300 dark:border-gray-600">
+                            <button class="w-12 bg-gray-50 text-xl text-gray-700 transition hover:bg-gray-100 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" type="button" id="btn-minus" aria-label="Reducir cantidad">-</button>
                             <input
+                                class="w-16 border-x border-gray-200 bg-white text-center text-gray-900 outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
                                 type="number"
                                 id="quantity"
                                 name="quantity"
@@ -79,9 +80,9 @@
                                 inputmode="numeric"
                                 required
                             >
-                            <button type="button" id="btn-plus" aria-label="Aumentar cantidad">+</button>
+                            <button class="w-12 bg-gray-50 text-xl text-gray-700 transition hover:bg-gray-100 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" type="button" id="btn-plus" aria-label="Aumentar cantidad">+</button>
                         </div>
-                        <button class="product-detail__submit" type="submit">Encargar producto</button>
+                        <button class="inline-flex min-h-12 flex-1 items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">Realizar pedido</button>
                     </div>
                 </form>
             {% endif %}
@@ -89,380 +90,24 @@
     </article>
 </section>
 
-{% if request.user|has_group:"Cliente" %}
+{% if request.user|has_group:"Cliente" and product.available and product.stock > 0 %}
     <script>
         const quantityInput = document.getElementById('quantity');
-        const minimumQuantity = Number(quantityInput.min) || 1;
-        const maximumQuantity = quantityInput.max ? Number(quantityInput.max) : Infinity;
+        if (quantityInput) {
+            const minimumQuantity = Number(quantityInput.min) || 1;
+            const maximumQuantity = quantityInput.max ? Number(quantityInput.max) : Infinity;
 
-        document.getElementById('btn-minus').addEventListener('click', () => {
-            const quantity = Number(quantityInput.value) || minimumQuantity;
-            quantityInput.value = Math.max(minimumQuantity, quantity - 1);
-        });
+            document.getElementById('btn-minus').addEventListener('click', () => {
+                const quantity = Number(quantityInput.value) || minimumQuantity;
+                quantityInput.value = Math.max(minimumQuantity, quantity - 1);
+            });
 
-        document.getElementById('btn-plus').addEventListener('click', () => {
-            const quantity = Number(quantityInput.value) || minimumQuantity;
-            quantityInput.value = Math.min(maximumQuantity, quantity + 1);
-        });
+            document.getElementById('btn-plus').addEventListener('click', () => {
+                const quantity = Number(quantityInput.value) || minimumQuantity;
+                quantityInput.value = Math.min(maximumQuantity, quantity + 1);
+            });
+        }
     </script>
 {% endif %}
 
-<style>
-    .product-detail {
-        width: min(100% - 2rem, 72rem);
-        margin: 0 auto;
-        padding: 2rem 0 3rem;
-    }
-
-    .product-detail__breadcrumb {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .product-detail__breadcrumb a {
-        color: #4f46e5;
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .product-detail__breadcrumb a:hover {
-        text-decoration: underline;
-    }
-
-    .product-detail__card {
-        display: grid;
-        overflow: hidden;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        border: 1px solid #e5e7eb;
-        border-radius: 1rem;
-        background: #fff;
-        box-shadow: 0 16px 32px -20px rgb(17 24 39 / 0.45);
-    }
-
-    .product-detail__media {
-        min-height: 24rem;
-        background: #f3f4f6;
-    }
-
-    .product-detail__media img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        min-height: 24rem;
-        object-fit: cover;
-    }
-
-    .product-detail__placeholder {
-        display: grid;
-        min-height: 24rem;
-        place-items: center;
-        padding: 2rem;
-        color: #6b7280;
-        text-align: center;
-    }
-
-    .product-detail__content {
-        align-self: center;
-        padding: clamp(1.5rem, 4vw, 3rem);
-    }
-
-    .product-detail__category {
-        margin: 0 0 0.75rem;
-        color: #4f46e5;
-        font-size: 0.875rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-    }
-
-    .product-detail__title-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
-    .product-detail__title-row h1 {
-        margin: 0;
-        color: #111827;
-        font-size: clamp(1.75rem, 4vw, 2.5rem);
-        line-height: 1.15;
-        overflow-wrap: anywhere;
-    }
-
-    .product-detail__availability {
-        flex: 0 0 auto;
-        border-radius: 9999px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .product-detail__availability.is-available {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .product-detail__availability.is-unavailable {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .product-detail__price {
-        margin: 1.25rem 0;
-        color: #4338ca;
-        font-size: 2rem;
-        font-weight: 800;
-    }
-
-    .product-detail__description {
-        margin: 0;
-        color: #4b5563;
-        line-height: 1.7;
-        white-space: pre-line;
-    }
-
-    .product-detail__stock {
-        display: flex;
-        align-items: center;
-        gap: 0.625rem;
-        margin-top: 1.5rem;
-        color: #374151;
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
-
-    .product-detail__stock-indicator {
-        width: 0.625rem;
-        height: 0.625rem;
-        border-radius: 50%;
-    }
-
-    .product-detail__stock-indicator.is-in-stock {
-        background: #16a34a;
-    }
-
-    .product-detail__stock-indicator.is-out-of-stock {
-        background: #dc2626;
-    }
-
-    .product-detail__management {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
-    }
-
-    .product-detail__management-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 2.75rem;
-        border: 1px solid #c7d2fe;
-        border-radius: 0.5rem;
-        padding: 0.625rem 0.875rem;
-        background: #eef2ff;
-        color: #4338ca;
-        font-size: 0.875rem;
-        font-weight: 700;
-        text-decoration: none;
-        transition: background-color 150ms ease;
-    }
-
-    .product-detail__management-link:hover {
-        background: #e0e7ff;
-    }
-
-    .product-detail__management-link.is-danger {
-        border-color: #fecaca;
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .product-detail__management-link.is-danger:hover {
-        background: #fee2e2;
-    }
-
-    .product-detail__order {
-        margin-top: 1.75rem;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 1.5rem;
-    }
-
-    .product-detail__order label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #374151;
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
-
-    .product-detail__order-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .product-detail__quantity {
-        display: flex;
-        min-height: 2.875rem;
-        overflow: hidden;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-    }
-
-    .product-detail__quantity button {
-        width: 2.75rem;
-        border: 0;
-        background: #f9fafb;
-        color: #374151;
-        cursor: pointer;
-        font-size: 1.25rem;
-    }
-
-    .product-detail__quantity input {
-        width: 3.5rem;
-        border: 0;
-        border-right: 1px solid #e5e7eb;
-        border-left: 1px solid #e5e7eb;
-        color: #111827;
-        text-align: center;
-        appearance: textfield;
-        -moz-appearance: textfield;
-    }
-
-    .product-detail__quantity input::-webkit-inner-spin-button,
-    .product-detail__quantity input::-webkit-outer-spin-button {
-        margin: 0;
-        -webkit-appearance: none;
-    }
-
-    .product-detail__quantity input:focus-visible,
-    .product-detail__quantity button:focus-visible,
-    .product-detail__submit:focus-visible {
-        outline: 2px solid #6366f1;
-        outline-offset: -2px;
-    }
-
-    .product-detail__submit {
-        flex: 1 1 12rem;
-        min-height: 2.875rem;
-        border: 0;
-        border-radius: 0.5rem;
-        background: #4f46e5;
-        color: #fff;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 700;
-        transition: background-color 150ms ease;
-    }
-
-    .product-detail__submit:hover {
-        background: #4338ca;
-    }
-
-    .dark .product-detail__breadcrumb {
-        color: #9ca3af;
-    }
-
-    .dark .product-detail__breadcrumb a,
-    .dark .product-detail__category {
-        color: #a5b4fc;
-    }
-
-    .dark .product-detail__card {
-        border-color: #374151;
-        background: #111827;
-    }
-
-    .dark .product-detail__media,
-    .dark .product-detail__quantity button {
-        background: #1f2937;
-    }
-
-    .dark .product-detail__placeholder,
-    .dark .product-detail__description {
-        color: #d1d5db;
-    }
-
-    .dark .product-detail__title-row h1,
-    .dark .product-detail__stock,
-    .dark .product-detail__order label {
-        color: #f9fafb;
-    }
-
-    .dark .product-detail__price {
-        color: #a5b4fc;
-    }
-
-    .dark .product-detail__order {
-        border-color: #374151;
-    }
-
-    .dark .product-detail__management-link {
-        border-color: #4338ca;
-        background: #312e81;
-        color: #e0e7ff;
-    }
-
-    .dark .product-detail__management-link:hover {
-        background: #3730a3;
-    }
-
-    .dark .product-detail__management-link.is-danger {
-        border-color: #991b1b;
-        background: #450a0a;
-        color: #fecaca;
-    }
-
-    .dark .product-detail__management-link.is-danger:hover {
-        background: #7f1d1d;
-    }
-
-    .dark .product-detail__quantity {
-        border-color: #4b5563;
-    }
-
-    .dark .product-detail__quantity button,
-    .dark .product-detail__quantity input {
-        color: #f9fafb;
-    }
-
-    .dark .product-detail__quantity input {
-        border-color: #4b5563;
-        background: #111827;
-    }
-
-    @media (max-width: 700px) {
-        .product-detail__card {
-            grid-template-columns: minmax(0, 1fr);
-        }
-
-        .product-detail__media,
-        .product-detail__media img,
-        .product-detail__placeholder {
-            min-height: 17rem;
-            max-height: 24rem;
-        }
-    }
-
-    @media (max-width: 420px) {
-        .product-detail__title-row {
-            flex-direction: column;
-        }
-
-        .product-detail__order-controls {
-            flex-direction: column;
-        }
-
-        .product-detail__quantity {
-            align-self: flex-start;
-        }
-    }
-</style>
 {% endblock %}
