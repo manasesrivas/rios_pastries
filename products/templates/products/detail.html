@@ -65,25 +65,43 @@
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.pk }}">
 
-                    <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="quantity">Cantidad</label>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.quantity.id_for_label }}">
+                        {{ order_form.quantity.label }}
+                    </label>
                     <div class="flex flex-col gap-3 sm:flex-row">
                         <div class="flex min-h-12 w-fit overflow-hidden rounded-lg border border-gray-300 dark:border-gray-600">
                             <button class="w-12 bg-gray-50 text-xl text-gray-700 transition hover:bg-gray-100 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" type="button" id="btn-minus" aria-label="Reducir cantidad">-</button>
-                            <input
-                                class="w-16 border-x border-gray-200 bg-white text-center text-gray-900 outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-                                type="number"
-                                id="quantity"
-                                name="quantity"
-                                value="1"
-                                min="1"
-                                {% if product.stock %}max="{{ product.stock }}"{% endif %}
-                                inputmode="numeric"
-                                required
-                            >
+                            {{ order_form.quantity }}
                             <button class="w-12 bg-gray-50 text-xl text-gray-700 transition hover:bg-gray-100 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" type="button" id="btn-plus" aria-label="Aumentar cantidad">+</button>
                         </div>
-                        <button class="inline-flex min-h-12 flex-1 items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">Realizar pedido</button>
                     </div>
+                    {% for error in order_form.quantity.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                    {% endfor %}
+
+                    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.metodo_pago.id_for_label }}">
+                                {{ order_form.metodo_pago.label }}
+                            </label>
+                            {{ order_form.metodo_pago }}
+                            {% for error in order_form.metodo_pago.errors %}
+                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.tipo_entrega.id_for_label }}">
+                                {{ order_form.tipo_entrega.label }}
+                            </label>
+                            {{ order_form.tipo_entrega }}
+                            {% for error in order_form.tipo_entrega.errors %}
+                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button class="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">
+                        Realizar pedido
+                    </button>
                 </form>
             {% endif %}
         </div>

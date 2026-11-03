@@ -37,12 +37,14 @@ class NoticationsConsumer(AsyncWebsocketConsumer):
             )
 
     async def order_updated(self, event):
+        message = {
+            'type': 'order_updated',
+            **{
+                key: value
+                for key, value in event.items()
+                if key != 'type'
+            },
+        }
         await self.send(
-            text_data=json.dumps(
-                {
-                    'type': 'order_updated',
-                    'order_id': event['order_id'],
-                    'product_name': event['product_name'],
-                }
-            )
+            text_data=json.dumps(message)
         )

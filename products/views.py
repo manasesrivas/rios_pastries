@@ -7,6 +7,7 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from orders.forms import OrderForm
 from .models import Product
 from .forms import ProductForm
 
@@ -27,6 +28,11 @@ class ProductDetailView(PermissionsClient, DetailView):
     model = Product
     template_name = 'products/detail.html'
     context_object_name = 'product'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['order_form'] = OrderForm(max_quantity=self.object.stock)
+        return context
 
 class ProductCreateView(AdminPermission, CreateView):
     permission_required = 'products.add_product'

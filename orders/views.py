@@ -2,9 +2,12 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import transaction
 from django.db.models import Sum
+from django import forms
+from django.core.exceptions import ValidationError
 from products.models import Product
 from detail_orders.models import DetailOrder, Status
 from django.urls import reverse_lazy
+from django.http import HttpResponseBadRequest
 from django.views.generic import (
     ListView,
     DetailView,
@@ -14,22 +17,23 @@ from django.views.generic import (
     FormView,
     View
 )
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from .forms import OrderForm
 from .models import Order
 
 
 ORDER_NOTIFICATIONS_GROUP = 'order_administrators'
 
 
-def publish_order_update(order_id, product_name):
+def publish_order_update(**order_data):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         ORDER_NOTIFICATIONS_GROUP,
         {
             'type': 'order_updated',
-            'order_id': order_id,
-            'product_name': product_name,
+            **order_data,
         },
     )
 
@@ -83,6 +87,11 @@ class OrderDetailView(PermissionsClient, DetailView):
     template_name = 'orders/detail.html'
     context_object_name = 'order'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['status_choices'] = Order.Estado.choices
+        return context
+
     def get_queryset(self):
         user = self.request.user
         # Si es superusuario, staff o pertenece al grupo Administrador o Cajero, puede ver el detalle de cualquier pedido
@@ -92,34 +101,98 @@ class OrderDetailView(PermissionsClient, DetailView):
         return Order.objects.filter(user=user)
 
 
+class OrderStatusUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Order
+    template_name = 'orders/detail.html'
+    context_object_name = 'order'
+    fields = ['status']
+    permission_required = 'orders.change_order'
+    raise_exception = True
+    http_method_names = ['post']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['status_choices'] = Order.Estado.choices
+        return context
+
+    def get_success_url(self):
+        return reverse('orders:detail', kwargs={'pk': self.object.pk})
+
+
 class OrderCreateView(PermissionsClient, View):
     model = Order
     success_url = reverse_lazy('orders:list')
 
     def post(self, request):
-        product_id = request.POST.get('product_id')
-        product = get_object_or_404(Product, pk=product_id)
-        user = request.user
-        quantity = int(request.POST.get('quantity', 1))
+        product_ids = request.POST.getlist('product_id')
+        quantities = request.POST.getlist('quantity')
+        if not product_ids or len(product_ids) != len(quantities):
+            return HttpResponseBadRequest(
+                'Envía al menos un producto y una cantidad por cada producto.'
+            )
 
-        with transaction.atomic():
-            # Keep adding products to the customer's existing order.
-            order = Order.objects.filter(user=user).last()
-            if not order:
-                order = Order.objects.create(
-                    user=user,
-                    subtotal=0,
-                    total=0,
-                    direccion=''
+        products_by_id = {}
+        quantities_by_id = {}
+        validated_form = None
+        for product_id, quantity_value in zip(product_ids, quantities):
+            product = get_object_or_404(Product, pk=product_id)
+            try:
+                quantity = forms.IntegerField(min_value=1).clean(quantity_value)
+            except ValidationError as error:
+                return HttpResponseBadRequest('; '.join(error.messages))
+            products_by_id[product.pk] = product
+            quantities_by_id[product.pk] = (
+                quantities_by_id.get(product.pk, 0) + quantity
+            )
+
+        for product_id, product in products_by_id.items():
+            if not product.available or product.stock <= 0:
+                return HttpResponseBadRequest(
+                    f'El producto {product.name} no está disponible.'
+                )
+            if quantities_by_id[product_id] > product.stock:
+                return HttpResponseBadRequest(
+                    f'La cantidad solicitada para {product.name} supera '
+                    'las existencias disponibles.'
                 )
 
-            detail = DetailOrder.objects.filter(order=order, product=product).first()
-            if detail:
-                detail.quantity += quantity
-                detail.subtotal = detail.quantity * detail.price
-                detail.save()
-            else:
-                status_pendiente, _ = Status.objects.get_or_create(name=Status.PENDIENTE)
+            form_data = request.POST.copy()
+            form_data.setlist(
+                'quantity',
+                [str(quantities_by_id[product_id])],
+            )
+            form = OrderForm(form_data, max_quantity=product.stock)
+            if not form.is_valid():
+                if len(products_by_id) == 1:
+                    return render(
+                        request,
+                        'products/detail.html',
+                        {'product': product, 'order_form': form},
+                    )
+                return HttpResponseBadRequest(form.errors.as_text())
+            validated_form = form
+
+        if validated_form is None:
+            return HttpResponseBadRequest('No se recibieron productos válidos.')
+
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user,
+                subtotal=0,
+                total=0,
+                direccion='',
+                metodo_pago=validated_form.cleaned_data['metodo_pago'],
+                tipo_entrega=validated_form.cleaned_data['tipo_entrega'],
+            )
+            status_pendiente, _ = Status.objects.get_or_create(
+                name=Status.PENDIENTE
+            )
+            total = 0
+            product_names = []
+            notification_products = []
+            product_quantity = 0
+            for product_id, product in products_by_id.items():
+                quantity = quantities_by_id[product_id]
                 DetailOrder.objects.create(
                     order=order,
                     product=product,
@@ -128,14 +201,37 @@ class OrderCreateView(PermissionsClient, View):
                     subtotal=product.price * quantity,
                     status=status_pendiente
                 )
+                total += product.price * quantity
+                product_names.append(product.name)
+                notification_products.append({
+                    'name': product.name,
+                    'quantity': quantity,
+                    'unit_price': str(product.price),
+                    'subtotal': str(product.price * quantity),
+                })
+                product_quantity += quantity
 
-            detalles = DetailOrder.objects.filter(order=order)
-            nuevo_total = sum(d.subtotal for d in detalles)
-            order.subtotal = nuevo_total
-            order.total = nuevo_total
+            order.subtotal = total
+            order.total = total
             order.save()
+            notification_data = {
+                'order_id': order.pk,
+                'product_name': ', '.join(product_names),
+                'products': notification_products,
+                'order_date': order.fecha.strftime('%d/%m/%Y'),
+                'order_time': order.hora.strftime('%H:%M'),
+                'customer_name': (
+                    f'{order.user.nombres or order.user.email} '
+                    f'{order.user.apellidos or ""}'
+                ).strip(),
+                'product_quantity': product_quantity,
+                'payment_method': order.get_metodo_pago_display(),
+                'delivery_type': order.get_tipo_entrega_display(),
+                'total': str(order.total),
+                'status': order.status,
+            }
             transaction.on_commit(
-                lambda: publish_order_update(order.pk, product.name)
+                lambda data=notification_data: publish_order_update(**data)
             )
 
         return redirect(self.success_url)

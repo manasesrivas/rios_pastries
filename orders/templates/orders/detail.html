@@ -20,12 +20,39 @@
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
                     {{ order.fecha|date:"d/m/Y" }} · {{ order.hora|time:"H:i" }}
                 </p>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Estado: {{ order.get_status_display }}
+                </p>
             </div>
             <div class="rounded-xl bg-indigo-50 px-4 py-3 dark:bg-indigo-950">
                 <p class="text-xs font-medium text-indigo-700 dark:text-indigo-300">Total del pedido</p>
                 <p class="mt-1 text-2xl font-bold text-indigo-800 dark:text-indigo-200">${{ order.total|floatformat:"2u" }}</p>
             </div>
         </header>
+
+        {% if perms.orders.change_order %}
+            <form class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-end sm:px-7" method="post" action="{% url 'orders:status_update' order.pk %}">
+                {% csrf_token %}
+                <div class="flex-1">
+                    <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="order-status">
+                        Cambiar estado
+                    </label>
+                    <select class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white" id="order-status" name="status" required>
+                        {% for status_value, status_label in status_choices %}
+                            <option value="{{ status_value }}" {% if order.status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for error in form.status.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <button class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">
+                    Guardar estado
+                </button>
+            </form>
+        {% endif %}
 
         <div class="p-5 sm:p-7">
             <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Productos encargados</h2>
