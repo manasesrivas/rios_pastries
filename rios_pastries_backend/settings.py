@@ -23,10 +23,10 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5q15g@$r-3zxg1sbs+ur7ngksp@rh$v@#l)8g4^o%=yp!+tl^s'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -61,19 +61,28 @@ INSTALLED_APPS = [
     'channels',
 ]
 
+REDIS_URL = os.getenv('REDIS_URL')
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL]
+            }
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        }
+    }
+
 # punto de entrada ASGI
 ASGI_APPLICATION = 'rios_pastries_backend.asgi.application'
 
-# configuracion de channel layer (redis)
-CHANNEL_LAYERS = {
-    'default': {
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        # 'CONFIG': {
-        #     'hosts': [('127.0.0.1', 6379)]
-        # }
-    }
-}
+
 
 TAILWIND_APP_NAME = 'theme'
 
@@ -85,6 +94,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'rios_pastries_backend.urls'
