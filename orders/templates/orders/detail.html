@@ -1,23 +1,95 @@
 {% extends 'base.html' %}
 
+{% block title %}Pedido #{{ order.pk }} | Ríos Pastries{% endblock %}
+
 {% block content %}
-<h1>Detalle de pedido</h1>
+<section class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <nav class="mb-5 text-sm text-gray-500 dark:text-gray-400" aria-label="Navegación">
+        <a class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300" href="{% url 'orders:list' %}">
+            Volver a pedidos
+        </a>
+        <span class="mx-2" aria-hidden="true">/</span>
+        <span aria-current="page">Pedido #{{ order.pk }}</span>
+    </nav>
 
-<p>ID: {{ order.pk }}</p>
-<p>Fecha: {{ order.fecha }}</p>
-<h3>Productos encargados:</h3>
-<ul>
-    {% for detalle in order.order.all %}
-        <li>
-            <strong>{{ detalle.product.name }}</strong> - Cantidad: {{ detalle.quantity }} - Precio: ${{ detalle.price }} - Subtotal: ${{ detalle.subtotal }} - Estado: <em>{{ detalle.status.get_name_display|default:detalle.status.name|default:"Pendiente" }}</em>
-        </li>
-    {% empty %}
-        <li>No hay productos en este pedido.</li>
-    {% endfor %}
-</ul>
-<p><strong>Total:</strong> ${{ order.total }}</p>
+    <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <header class="flex flex-col gap-4 border-b border-gray-200 px-5 py-5 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Detalle del pedido</p>
+                <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Pedido #{{ order.pk }}</h1>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    {{ order.fecha|date:"d/m/Y" }} · {{ order.hora|time:"H:i" }}
+                </p>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Estado: {{ order.get_status_display }}
+                </p>
+            </div>
+            <div class="rounded-xl bg-indigo-50 px-4 py-3 dark:bg-indigo-950">
+                <p class="text-xs font-medium text-indigo-700 dark:text-indigo-300">Total del pedido</p>
+                <p class="mt-1 text-2xl font-bold text-indigo-800 dark:text-indigo-200">${{ order.total|floatformat:"2u" }}</p>
+            </div>
+        </header>
 
-<a href="{% url 'orders:update' order.pk %}">Editar</a>
-<a href="{% url 'orders:list' %}">Volver</a>
+        {% if perms.orders.change_order %}
+            <form class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-end sm:px-7" method="post" action="{% url 'orders:status_update' order.pk %}">
+                {% csrf_token %}
+                <div class="flex-1">
+                    <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="order-status">
+                        Cambiar estado
+                    </label>
+                    <select class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white" id="order-status" name="status" required>
+                        {% for status_value, status_label in status_choices %}
+                            <option value="{{ status_value }}" {% if order.status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% for error in form.status.errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <button class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">
+                    Guardar estado
+                </button>
+            </form>
+        {% endif %}
 
+        <div class="p-5 sm:p-7">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Productos encargados</h2>
+
+            <div class="space-y-3">
+                {% for detalle in order.order.all %}
+                    <article class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0">
+                            <h3 class="break-words font-semibold text-gray-900 dark:text-white">{{ detalle.product.name }}</h3>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                Cantidad: {{ detalle.quantity }} <span aria-hidden="true">·</span>
+                                Precio unitario: ${{ detalle.price|floatformat:"2u" }}
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold {% if detalle.status.name == 'entregado' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% elif detalle.status.name == 'cancelado' %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% else %}bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300{% endif %}">
+                                {{ detalle.status.get_name_display|default:detalle.status.name|default:"Pendiente" }}
+                            </span>
+                            <p class="font-bold text-gray-900 dark:text-white">${{ detalle.subtotal|floatformat:"2u" }}</p>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="rounded-xl border border-dashed border-gray-300 px-5 py-10 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                        No hay productos en este pedido.
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <footer class="flex flex-col-reverse gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:justify-end sm:px-7">
+            <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'orders:list' %}">
+                Volver a pedidos
+            </a>
+            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
+                Editar pedido
+            </a>
+        </footer>
+    </article>
+</section>
 {% endblock %}

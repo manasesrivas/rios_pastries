@@ -1,7 +1,69 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Detalle de usuario{% endblock %}
 
 {% block content %}
+<section class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Detalle del usuario</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Información de la cuenta.</p>
+        </div>
 
-{{ user.nombres }}
+        <div class="p-6">
+            <dl class="grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Nombres</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.nombres|default:"No especificado" }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Apellidos</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.apellidos|default:"No especificado" }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Teléfono</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.telefono|default:"No especificado" }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Correo electrónico</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.email }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Grupo</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">
+                        {% for group in user.groups.all %}
+                            {{ group.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            {% if user.is_superuser %}Superusuario{% else %}Sin grupo asignado{% endif %}
+                        {% endfor %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Estado</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">
+                        {{ user.get_estado_display }}
+                    </dd>
+                </div>
+            </dl>
 
+            <div class="mt-6 flex flex-col gap-3 border-t border-gray-200 pt-5 dark:border-gray-700 sm:flex-row">
+                {% if user.estado == 'activo' %}
+                    <a href="{% url 'users:update' user.pk %}" class="flex-1 rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        Editar
+                    </a>
+                    <a href="{% url 'users:delete' user.pk %}" class="flex-1 rounded-lg bg-red-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400">
+                        Eliminar
+                    </a>
+                {% elif request.user.is_superuser %}
+                    <form method="post" action="{% url 'users:restore' user.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                            Restaurar usuario
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}

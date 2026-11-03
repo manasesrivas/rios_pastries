@@ -14,14 +14,24 @@ class ProductForm(forms.ModelForm):
             'available',
         ]
 
+        labels = {
+            'name': 'Nombre',
+            'image': 'Imagen',
+            'description': 'Descripción',
+            'price': 'Precio',
+            'category': 'Categoría',
+            'available': 'Disponible',
+        }
+
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre del producto',
             }),
-            'image': forms.TextInput(attrs={
+            'image': forms.FileInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'URL de la imagen',
+                'accept': 'image/*',
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',

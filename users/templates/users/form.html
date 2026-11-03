@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear usuario{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Crear usuario</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Completa los datos para registrar un usuario.</p>
+        </div>
+
+        <div class="p-6">
+            <form id="user-create-form" class="user-create-form space-y-5" action="{% url 'users:create' %}" method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    {% for field in form %}
+                        <div class="{% if field.name == 'password1' or field.name == 'password2' %}sm:col-span-2{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
+                    Crear usuario
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<style>
+    .user-create-form input,
+    .user-create-form select {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background-color: #fff;
+        color: #111827;
+        padding: 0.75rem 1rem;
+    }
+
+    .dark .user-create-form input,
+    .dark .user-create-form select {
+        border-color: #4b5563;
+        background-color: #1f2937;
+        color: #f9fafb;
+    }
+
+    .user-create-form input:focus,
+    .user-create-form select:focus {
+        border-color: #6366f1;
+        outline: 2px solid #6366f1;
+        outline-offset: 1px;
+    }
+</style>
+{% endblock %}

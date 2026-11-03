@@ -1,11 +1,78 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Editar usuario{% endblock %}
 
 {% block content %}
+<section class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Editar usuario</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Actualiza los datos de {{ user.nombres }} {{ user.apellidos }}.</p>
+        </div>
 
-<form action="{% url 'users:updateUser' user.id %}" method="post">
-    {% csrf_token %}
-    {{ form }}
-    <button>actualizar usuario</button>
-</form>
+        <div class="p-6">
+            <form class="user-edit-form space-y-5" action="{% url 'users:update' user.pk %}" method="post">
+                {% csrf_token %}
 
+                {% if form.non_field_errors %}
+                    <div class="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    {% for field in form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <button type="submit" class="flex-1 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
+                        Guardar cambios
+                    </button>
+                    <a href="{% url 'users:detail' user.pk %}" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<style>
+    .user-edit-form input,
+    .user-edit-form select {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background-color: #fff;
+        color: #111827;
+        padding: 0.75rem 1rem;
+    }
+
+    .dark .user-edit-form input,
+    .dark .user-edit-form select {
+        border-color: #4b5563;
+        background-color: #1f2937;
+        color: #f9fafb;
+    }
+
+    .user-edit-form input:focus,
+    .user-edit-form select:focus {
+        border-color: #6366f1;
+        outline: 2px solid #6366f1;
+        outline-offset: 1px;
+    }
+</style>
 {% endblock %}

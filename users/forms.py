@@ -193,6 +193,7 @@ class UserUpdateForm(forms.ModelForm):
             grupo = self.cleaned_data['grupo']
             user.groups.add(grupo)
         return user
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -210,3 +211,45 @@ class UserUpdateForm(forms.ModelForm):
             grupo = self.cleaned_data['grupo']
             user.groups.add(grupo)
         return user
+
+class UserProfileForm(forms.ModelForm):
+    telefono = forms.CharField(
+        label="Teléfono",
+        max_length=9,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{4}-\d{4}$',
+                message="Ingresa un teléfono de exactamente 9 dígitos."
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'type': 'tel',
+            'placeholder': '1234-5678',
+            'maxlength': '9',
+            'pattern': r'[0-9]{4}-[0-9]{4}',
+            'autocomplete': 'tel',
+        })
+    )
+
+    class Meta:
+        model = User
+        fields = ['nombres', 'apellidos', 'telefono', 'email']
+        labels = {
+            'nombres': 'Nombres',
+            'apellidos': 'Apellidos',
+            'email': 'Correo electrónico',
+        }
+        widgets = {
+            'nombres': forms.TextInput(attrs={
+                'placeholder': 'Ingresa tus nombres',
+                'autocomplete': 'given-name',
+            }),
+            'apellidos': forms.TextInput(attrs={
+                'placeholder': 'Ingresa tus apellidos',
+                'autocomplete': 'family-name',
+            }),
+            'email': forms.EmailInput(attrs={
+                'placeholder': 'ejemplo@correo.com',
+                'autocomplete': 'email',
+            }),
+        }

@@ -1,20 +1,182 @@
 {% extends 'base.html' %}
 
+{% block title %}Pedidos | Ríos Pastries{% endblock %}
+
 {% block content %}
-<h1>Listado de pedidos</h1>
+<section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    {% if can_receive_order_notifications %}
+        <!-- <div id="order-notification" class="mb-5 hidden items-center justify-between gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-100" role="status" aria-live="polite">
+            <p id="order-notification-message"></p>
+            <a id="order-notification-link" class="shrink-0 font-semibold underline hover:no-underline" href="#">
+                Ver pedido
+            </a>
+        </div> -->
+    {% endif %}
 
-<a href="{% url 'products:list' %}">Crear pedido</a>
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Pedidos</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Consulta y filtra tus pedidos por estado.</p>
+        </div>
+        <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'products:list' %}">
+            Crear pedido
+        </a>
+    </header>
 
-<ul>
-    {% for order in orders %}
-        <li>
-            Pedido #{{ order.pk }} - {{ order }}
-            <a href="{% url 'orders:detail' order.pk %}">Ver</a>
-            <a href="{% url 'orders:update' order.pk %}">Editar</a>
-        </li>
-    {% empty %}
-        <li>No hay pedidos registrados.</li>
-    {% endfor %}
-</ul>
+    <nav class="mb-6 flex gap-2 overflow-x-auto pb-2" aria-label="Filtrar pedidos por estado">
+        <a class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {% if not selected_status %}bg-indigo-600 text-white{% else %}bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-indigo-50 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-800{% endif %}" href="{% url 'orders:list' %}" {% if not selected_status %}aria-current="page"{% endif %}>
+            Todos
+        </a>
+        {% for status_value, status_label in status_choices %}
+            <a class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {% if selected_status == status_value %}bg-indigo-600 text-white{% else %}bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-indigo-50 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-800{% endif %}" href="{% url 'orders:list' %}?status={{ status_value|urlencode }}" {% if selected_status == status_value %}aria-current="page"{% endif %}>
+                {{ status_label }}
+            </a>
+        {% endfor %}
+    </nav>
 
+    <div id="order-list" class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {% for order in orders %}
+            <article data-order-id="{{ order.pk }}" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <header class="flex flex-col gap-2 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 data-field="order-number" class="text-lg font-bold text-gray-900 dark:text-white">Pedido #{{ order.pk }}</h2>
+                        <p data-field="date-time" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ order.fecha|date:"d/m/Y" }} · {{ order.hora|time:"H:i" }}
+                        </p>
+                        <p data-field="customer-name" class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            {{ order.user.nombres|default:order.user.email }} {{ order.user.apellidos }}
+                        </p>
+                        <p data-field="product-quantity" class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            Productos encargados: {{ order.product_quantity|default:0 }} unidades
+                        </p>
+                        <p data-field="payment-delivery" class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            Pago: {{ order.get_metodo_pago_display|default:"No especificado" }}
+                            · Entrega: {{ order.get_tipo_entrega_display|default:"No especificado" }}
+                        </p>
+                    </div>
+                    <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300">${{ order.total|floatformat:"2u" }}</p>
+                </header>
+
+                <footer class="flex flex-wrap justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
+                    <a data-field="detail-link" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'orders:detail' order.pk %}">
+                        Ver pedido
+                    </a>
+                    <a data-field="edit-link" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
+                        Editar
+                    </a>
+                </footer>
+            </article>
+        {% empty %}
+            <p data-empty-orders class="col-span-full rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                {% if selected_status %}
+                    No hay pedidos con este estado.
+                {% else %}
+                    No hay pedidos registrados.
+                {% endif %}
+            </p>
+        {% endfor %}
+        <template id="order-card-template">
+            <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <header class="flex flex-col gap-2 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 data-field="order-number" class="text-lg font-bold text-gray-900 dark:text-white"></h2>
+                        <p data-field="date-time" class="mt-1 text-sm text-gray-500 dark:text-gray-400"></p>
+                        <p data-field="customer-name" class="mt-1 text-sm text-gray-600 dark:text-gray-300"></p>
+                        <p data-field="product-quantity" class="mt-1 text-sm text-gray-600 dark:text-gray-300"></p>
+                        <p data-field="payment-delivery" class="mt-1 text-sm text-gray-600 dark:text-gray-300"></p>
+                    </div>
+                    <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300"></p>
+                </header>
+                <footer class="flex flex-wrap justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
+                    <a data-field="detail-link" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">Ver pedido</a>
+                    <a data-field="edit-link" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Editar</a>
+                </footer>
+            </article>
+        </template>
+    </div>
+</section>
+{% if can_receive_order_notifications %}
+<script>
+    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${socketProtocol}//${window.location.host}/ws/notificaciones/`);
+    const orderList = document.getElementById('order-list');
+    const orderNotification = document.getElementById('order-notification');
+    const orderNotificationMessage = document.getElementById('order-notification-message');
+    const orderNotificationLink = document.getElementById('order-notification-link');
+    const orderDetailUrlTemplate = "{% url 'orders:detail' 0 %}";
+    const orderUpdateUrlTemplate = "{% url 'orders:update' 0 %}";
+    const orderCardTemplate = document.getElementById('order-card-template');
+    const selectedStatus = "{{ selected_status|default:''|escapejs }}";
+
+    socket.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type !== 'order_updated') {
+            return;
+        }
+
+        const orderId = Number(data.order_id);
+        if (!Number.isInteger(orderId) || !orderList || !orderCardTemplate) {
+            return;
+        }
+
+        if (selectedStatus && selectedStatus !== data.status) {
+            return;
+        }
+
+        const card = orderCardTemplate.content.firstElementChild.cloneNode(true);
+        card.dataset.orderId = orderId;
+        card.querySelector('[data-field="order-number"]').textContent = `Pedido #${orderId}`;
+        card.querySelector('[data-field="date-time"]').textContent =
+            `${data.order_date} · ${data.order_time}`;
+        card.querySelector('[data-field="customer-name"]').textContent = data.customer_name;
+        card.querySelector('[data-field="product-quantity"]').textContent =
+            `Productos encargados: ${data.product_quantity} unidades`;
+        card.querySelector('[data-field="payment-delivery"]').textContent =
+            `Pago: ${data.payment_method} · Entrega: ${data.delivery_type}`;
+        card.querySelector('[data-field="total"]').textContent =
+            `$${Number(data.total).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        card.querySelector('[data-field="detail-link"]').href =
+            orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+        card.querySelector('[data-field="edit-link"]').href =
+            orderUpdateUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+
+        const currentCard = orderList.querySelector(
+            `article[data-order-id="${orderId}"]`,
+        );
+        if (currentCard) {
+            currentCard.replaceWith(card);
+        } else {
+            orderList.querySelector('[data-empty-orders]')?.remove();
+            orderList.prepend(card);
+        }
+
+        if (orderNotificationMessage && orderNotificationLink && orderNotification) {
+            orderNotificationMessage.textContent =
+                `Se agregó ${data.product_name} al pedido #${orderId}.`;
+            orderNotificationLink.href = orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+            orderNotification.classList.remove('hidden');
+            orderNotification.classList.add('flex');
+        }
+    });
+
+    socket.addEventListener('open', () => {
+        console.info('Conexión de notificaciones de pedidos establecida.');
+    });
+
+    socket.addEventListener('close', (event) => {
+        console.warn(
+            'Conexión de notificaciones de pedidos cerrada.',
+            event.code,
+            event.reason,
+        );
+    });
+
+    socket.addEventListener('error', (event) => {
+        console.error('Error en la conexión de notificaciones de pedidos:', event);
+    });
+</script>
+{% endif %}
 {% endblock %}

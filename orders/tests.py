@@ -3,14 +3,40 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from channels.testing import WebsocketCommunicator
 from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import patch
 
+from orders.forms import OrderForm
 from orders.models import Order
+from orders.consumers import NoticationsConsumer
 from products.models import Product
 from categories.models import Category
 from detail_orders.models import DetailOrder
 
 User = get_user_model()
+
+
+class OrderFormTests(TestCase):
+    def test_quantity_payment_and_delivery_are_required(self):
+        form = OrderForm()
+
+        for field_name in ('quantity', 'metodo_pago', 'tipo_entrega'):
+            self.assertTrue(form.fields[field_name].required)
+
+    def test_empty_payment_and_delivery_cannot_be_submitted(self):
+        form = OrderForm({
+            'quantity': 1,
+            'metodo_pago': '',
+            'tipo_entrega': '',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('metodo_pago', form.errors)
+        self.assertIn('tipo_entrega', form.errors)
 
 
 # ============================================================
@@ -43,6 +69,12 @@ class OrderModelTest(TestCase):
             total=Decimal('116.00'),
             direccion='Calle Falsa 123',
         )
+
+    def test_pago_y_entrega_son_requeridos(self):
+        for field_name in ('metodo_pago', 'tipo_entrega'):
+            field = Order._meta.get_field(field_name)
+            self.assertFalse(field.blank)
+            self.assertFalse(field.has_default())
 
     def test_order_creation(self):
         """Verificar que la orden se crea correctamente."""
@@ -264,6 +296,33 @@ class OrderViewsTest(TestCase):
         response = self.client.get(reverse('orders:list'))
         self.assertEqual(response.status_code, 200)
 
+    def test_list_view_muestra_suma_de_unidades_encargadas(self):
+        self.client.login(email='admin@test.com', password='admin123')
+        DetailOrder.objects.create(
+            order=self.order,
+            product=self.producto,
+            quantity=3,
+            price=Decimal('100.00'),
+            subtotal=Decimal('300.00'),
+        )
+
+        response = self.client.get(reverse('orders:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['orders'][0].product_quantity, 3)
+        self.assertContains(response, 'Productos encargados: 3 unidades')
+
+    def test_list_view_muestra_pago_y_tipo_de_entrega(self):
+        self.order.metodo_pago = Order.MetodoPago.TARJETA
+        self.order.tipo_entrega = Order.TipoEntrega.RECOGER
+        self.order.save()
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.get(reverse('orders:list'))
+
+        self.assertContains(response, 'Pago: Tarjeta')
+        self.assertContains(response, 'Entrega: Recoger en tienda')
+
     def test_detail_view_con_login(self):
         """Ver el detalle de una orden existente."""
         self.client.login(email='admin@test.com', password='admin123')
@@ -271,6 +330,40 @@ class OrderViewsTest(TestCase):
             reverse('orders:detail', kwargs={'pk': self.order.pk})
         )
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Cambiar estado')
+
+    def test_usuario_con_permiso_puede_cambiar_estado_desde_detalle(self):
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.post(
+            reverse('orders:status_update', kwargs={'pk': self.order.pk}),
+            {'status': Order.Estado.ENTREGADO},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('orders:detail', kwargs={'pk': self.order.pk}),
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Estado.ENTREGADO)
+
+    def test_usuario_sin_permiso_no_puede_cambiar_estado(self):
+        self.client.login(email='admin@test.com', password='admin123')
+        self.admin_user.user_permissions.remove(
+            Permission.objects.get(
+                content_type__app_label='orders',
+                codename='change_order',
+            )
+        )
+
+        response = self.client.post(
+            reverse('orders:status_update', kwargs={'pk': self.order.pk}),
+            {'status': Order.Estado.CANCELADO},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Estado.PENDIENTE)
 
     def test_detail_view_orden_inexistente(self):
         """Intentar ver una orden que no existe debe dar 404."""
@@ -280,34 +373,149 @@ class OrderViewsTest(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_post_crear_y_actualizar_orden(self):
+    def test_cada_envio_crea_un_pedido_independiente(self):
         """
-        POST a orders:create debe crear la orden si no existe,
-        y si ya existe el producto, aumentar quantity y recalcular totales.
+        Cada envío crea un pedido nuevo, aunque el cliente ya tenga otro
+        pedido con el mismo producto.
         """
         self.client.login(email='admin@test.com', password='admin123')
 
-        # Primer POST: crea la orden y el detalle (quantity = 1)
-        response = self.client.post(reverse('orders:create'), {'product_id': self.producto.pk})
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': self.producto.pk,
+                'quantity': 1,
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.DOMICILIO,
+            },
+        )
         self.assertEqual(response.status_code, 302)
 
         order = Order.objects.filter(user=self.admin_user).last()
         self.assertIsNotNone(order)
         self.assertEqual(order.total, Decimal('100.00'))
+        self.assertEqual(order.metodo_pago, Order.MetodoPago.EFECTIVO)
+        self.assertEqual(order.tipo_entrega, Order.TipoEntrega.DOMICILIO)
 
-        detalle = DetailOrder.objects.filter(order=order, product=self.producto).first()
+        detalle = DetailOrder.objects.get(order=order, product=self.producto)
         self.assertEqual(detalle.quantity, 1)
         self.assertEqual(detalle.subtotal, Decimal('100.00'))
 
-        # Segundo POST con el mismo producto: actualiza quantity a 2 y totales a 200.00
-        response2 = self.client.post(reverse('orders:create'), {'product_id': self.producto.pk})
+        response2 = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': self.producto.pk,
+                'quantity': 1,
+                'metodo_pago': Order.MetodoPago.TARJETA,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+            },
+        )
         self.assertEqual(response2.status_code, 302)
 
-        detalle.refresh_from_db()
-        order.refresh_from_db()
-        self.assertEqual(detalle.quantity, 2)
-        self.assertEqual(detalle.subtotal, Decimal('200.00'))
-        self.assertEqual(order.total, Decimal('200.00'))
+        second_order = Order.objects.filter(
+            user=self.admin_user,
+        ).order_by('-pk').first()
+        self.assertNotEqual(second_order.pk, order.pk)
+        second_detail = DetailOrder.objects.get(
+            order=second_order,
+            product=self.producto,
+        )
+        self.assertEqual(second_detail.quantity, 1)
+        self.assertEqual(second_order.total, Decimal('100.00'))
+        self.assertEqual(second_order.metodo_pago, Order.MetodoPago.TARJETA)
+        self.assertEqual(second_order.tipo_entrega, Order.TipoEntrega.RECOGER)
+
+    def test_un_envio_crea_un_pedido_con_multiples_productos(self):
+        second_product = Product.objects.create(
+            name='Galleta Test',
+            description='Descripción test',
+            price=Decimal('25.00'),
+            category=self.categoria,
+            available=True,
+            stock=8,
+        )
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': [str(self.producto.pk), str(second_product.pk)],
+                'quantity': ['2', '3'],
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.DOMICILIO,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.filter(user=self.admin_user).order_by('-pk').first()
+        self.assertNotEqual(order.pk, self.order.pk)
+        self.assertEqual(order.total, Decimal('275.00'))
+        self.assertEqual(order.order.count(), 2)
+        self.assertEqual(
+            order.order.get(product=self.producto).quantity,
+            2,
+        )
+        self.assertEqual(
+            order.order.get(product=second_product).quantity,
+            3,
+        )
+
+    def test_post_crear_orden_rechaza_pago_y_entrega_vacios(self):
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {'product_id': self.producto.pk, 'quantity': 1},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Order.objects.filter(user=self.admin_user).count(), 1)
+
+    def test_adding_product_notifies_existing_order_after_commit(self):
+        self.client.login(email='admin@test.com', password='admin123')
+
+        with patch('orders.views.publish_order_update') as publish_order_update:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(
+                    reverse('orders:create'),
+                    {
+                        'product_id': self.producto.pk,
+                        'quantity': 3,
+                        'metodo_pago': Order.MetodoPago.EFECTIVO,
+                        'tipo_entrega': Order.TipoEntrega.DOMICILIO,
+                    },
+                )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Order.objects.filter(user=self.admin_user).count(), 2)
+        new_order = Order.objects.filter(
+            user=self.admin_user,
+        ).order_by('-pk').first()
+        detail = DetailOrder.objects.get(
+            order=new_order,
+            product=self.producto,
+        )
+        self.assertEqual(detail.quantity, 3)
+        self.assertEqual(new_order.pk, detail.order_id)
+        self.assertEqual(new_order.total, Decimal('300.00'))
+        publish_order_update.assert_called_once_with(
+            order_id=new_order.pk,
+            product_name=self.producto.name,
+            products=[{
+                'name': self.producto.name,
+                'quantity': 3,
+                'unit_price': '100.00',
+                'subtotal': '300.00',
+            }],
+            order_date=new_order.fecha.strftime('%d/%m/%Y'),
+            order_time=new_order.hora.strftime('%H:%M'),
+            customer_name='Admin Test',
+            product_quantity=3,
+            payment_method='Efectivo',
+            delivery_type='Domicilio',
+            total='300.00',
+            status=Order.Estado.PENDIENTE,
+        )
 
     def test_usuario_sin_permisos_recibe_403(self):
         """
@@ -390,3 +598,69 @@ class OrderViewsTest(TestCase):
         response_admin = self.client.get(reverse('orders:list'))
         pedidos_admin = list(response_admin.context['orders'])
         self.assertEqual(len(pedidos_admin), 2)
+
+
+class OrderNotificationConsumerTests(TestCase):
+    def test_order_manager_receives_product_added_to_order_event(self):
+        async def verify_notification():
+            communicator = WebsocketCommunicator(
+                NoticationsConsumer.as_asgi(),
+                '/ws/notificaciones/',
+            )
+            communicator.scope['user'] = SimpleNamespace(
+                is_authenticated=True,
+                is_superuser=False,
+                is_staff=True,
+            )
+
+            connected, _ = await communicator.connect()
+            self.assertTrue(connected)
+
+            await get_channel_layer().group_send(
+                'order_administrators',
+                {
+                    'type': 'order_updated',
+                    'order_id': 42,
+                    'product_name': 'Pastel de prueba',
+                    'products': [{
+                        'name': 'Pastel de prueba',
+                        'quantity': 2,
+                        'unit_price': '12.50',
+                        'subtotal': '25.00',
+                    }],
+                    'order_date': '02/11/2026',
+                    'order_time': '12:00',
+                    'customer_name': 'Cliente de prueba',
+                    'product_quantity': 2,
+                    'payment_method': 'Efectivo',
+                    'delivery_type': 'Domicilio',
+                    'total': '25.00',
+                    'status': 'pendiente',
+                },
+            )
+            message = await communicator.receive_json_from()
+            self.assertEqual(
+                message,
+                {
+                    'type': 'order_updated',
+                    'order_id': 42,
+                    'product_name': 'Pastel de prueba',
+                    'products': [{
+                        'name': 'Pastel de prueba',
+                        'quantity': 2,
+                        'unit_price': '12.50',
+                        'subtotal': '25.00',
+                    }],
+                    'order_date': '02/11/2026',
+                    'order_time': '12:00',
+                    'customer_name': 'Cliente de prueba',
+                    'product_quantity': 2,
+                    'payment_method': 'Efectivo',
+                    'delivery_type': 'Domicilio',
+                    'total': '25.00',
+                    'status': 'pendiente',
+                },
+            )
+            await communicator.disconnect()
+
+        async_to_sync(verify_notification)()
