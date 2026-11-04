@@ -68,6 +68,7 @@
     --container-xl: 36rem;
     --container-2xl: 42rem;
     --container-3xl: 48rem;
+    --container-4xl: 56rem;
     --container-5xl: 64rem;
     --container-6xl: 72rem;
     --container-7xl: 80rem;
@@ -478,6 +479,9 @@
   .max-w-3xl {
     max-width: var(--container-3xl);
   }
+  .max-w-4xl {
+    max-width: var(--container-4xl);
+  }
   .max-w-5xl {
     max-width: var(--container-5xl);
   }
@@ -568,6 +572,11 @@
     --tw-space-y-reverse: 0;
     margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
     margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));
+  }
+  :where(.space-y-4 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
   }
   :where(.space-y-5 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
@@ -1450,6 +1459,9 @@
     .dark\:hover\:bg-indigo-900:where(.dark, .dark *):hover {
       background-color: var(--color-indigo-900);
     }
+    .dark\:hover\:bg-indigo-950:where(.dark, .dark *):hover {
+      background-color: var(--color-indigo-950);
+    }
     .dark\:hover\:bg-red-900:where(.dark, .dark *):hover {
       background-color: var(--color-red-900);
     }
@@ -1672,6 +1684,9 @@
   }
   .\[\&_select\]\:dark\:text-white select:where(.dark, .dark *) {
     color: var(--color-white);
+  }
+  .\[\&_textarea\]\:min-h-32 textarea {
+    min-height: calc(var(--spacing) * 32);
   }
   .\[\&_textarea\]\:min-h-36 textarea {
     min-height: calc(var(--spacing) * 36);

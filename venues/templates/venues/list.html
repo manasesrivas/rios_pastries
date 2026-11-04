@@ -1,14 +1,42 @@
 {% extends 'base.html' %}
 
+{% block title %}Locales{% endblock %}
+
 {% block content %}
-    {% include 'menu.html' %}
-    <a href="{% url 'venues:create' %}">crear local</a>
-    {% for venue in venues %}
-        <a href="{% url 'venues:detail' venue.pk %}">ver</a>
-        {{ venue.name }}
-        {{ venue.descripcion }}
-        {{ venue.capacity }}
-    {% empty %}
-    <p>no hay salas registradas</p>
-    {% endfor %}
+<section class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Locales</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Consulta los locales registrados.</p>
+        </div>
+        {% if perms.venues.add_venue %}
+            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'venues:create' %}">
+                Crear local
+            </a>
+        {% endif %}
+    </header>
+
+    <ul class="space-y-4">
+        {% for venue in venues %}
+            <li>
+                <article class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0">
+                        <h2 class="truncate text-lg font-semibold text-gray-900 dark:text-white">{{ venue.name }}</h2>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ venue.address }}</p>
+                        {% if venue.descripcion %}
+                            <p class="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ venue.descripcion }}</p>
+                        {% endif %}
+                    </div>
+                    <a class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950" href="{% url 'venues:detail' venue.pk %}">
+                        Ver detalles
+                    </a>
+                </article>
+            </li>
+        {% empty %}
+            <li class="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                No hay locales activos.
+            </li>
+        {% endfor %}
+    </ul>
+</section>
 {% endblock %}
