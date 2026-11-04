@@ -25,7 +25,7 @@ load_dotenv(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RIOS_PASTRIES_EXTERNAL_HOSTNAME')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
@@ -39,12 +39,8 @@ if RENDER_EXTERNAL_HOSTNAME:
 else:
     # Configuración de respaldo manual si es necesario
     ALLOWED_HOSTS = [
-        'rios-pastries.onrender.com',
         'localhost',
         '127.0.0.1',
-    ]
-    CSRF_TRUSTED_ORIGINS = [
-        'https://rios-pastries.onrender.com',
     ]
 
 
