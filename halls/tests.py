@@ -81,7 +81,6 @@ class HallViewsTests(TestCase):
             {
                 'venue': self.venue.pk,
                 'name': 'Salón Este',
-                'image': 'https://example.com/este.jpg',
                 'capacity': 40,
                 'price': '100.00',
                 'status': HallStatus.DISPONIBLE,
@@ -89,9 +88,17 @@ class HallViewsTests(TestCase):
         )
 
         self.assertRedirects(response, reverse('halls:list'))
-        self.assertTrue(
-            Hall.objects.filter(name='Salón Este', image='https://example.com/este.jpg').exists()
-        )
+        self.assertTrue(Hall.objects.filter(name='Salón Este').exists())
+
+    def test_hall_form_accepts_image_file_uploads(self):
+        self.grant_permissions('view_hall', 'add_hall')
+
+        response = self.client.get(reverse('halls:create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'enctype="multipart/form-data"')
+        self.assertContains(response, 'type="file"')
+        self.assertContains(response, 'name="image"')
 
     def test_update_hall(self):
         self.grant_permissions('view_hall', 'change_hall')
@@ -101,7 +108,6 @@ class HallViewsTests(TestCase):
             {
                 'venue': self.venue.pk,
                 'name': 'Salón Norte actualizado',
-                'image': 'https://example.com/norte-actualizado.jpg',
                 'capacity': 60,
                 'price': '150.00',
                 'status': HallStatus.RESERVADO,
@@ -113,7 +119,7 @@ class HallViewsTests(TestCase):
         self.assertEqual(self.available_hall.name, 'Salón Norte actualizado')
         self.assertEqual(
             self.available_hall.image,
-            'https://example.com/norte-actualizado.jpg',
+            'https://example.com/norte.jpg',
         )
 
     def test_delete_hall(self):

@@ -1,5 +1,5 @@
 from django.db import models
-
+from cloudinary.models import CloudinaryField
 
 class HallStatus(models.TextChoices):
     DISPONIBLE = 'DISPONIBLE', 'Disponible'
@@ -13,7 +13,14 @@ class Hall(models.Model):
         related_name='halls',
     )
     name = models.CharField(max_length=100)
-    image = models.URLField(max_length=500, blank=True, null=True)
+    image = CloudinaryField(
+        blank=True,
+        null=True,
+        folder='/rios_pastries',
+        transformation={
+        },
+        format='webp'
+    )
     capacity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(

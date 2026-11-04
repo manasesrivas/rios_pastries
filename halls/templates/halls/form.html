@@ -1,13 +1,54 @@
 {% extends 'base.html' %}
 
-{% block content %}
-    {% include 'menu.html' %}
+{% block title %}
+    {% if object %}Actualizar {{ object.name }}{% else %}Crear sala{% endif %}
+{% endblock %}
 
-    <h1>{% if object %}Actualizar sala{% else %}Crear sala{% endif %}</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Guardar</button>
-    </form>
-    <a href="{% url 'halls:list' %}">Cancelar</a>
+{% block content %}
+<section class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div class="border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {% if object %}Actualizar sala{% else %}Crear sala{% endif %}
+            </h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                {% if object %}Actualiza la información de {{ object.name }}.{% else %}Completa los datos para registrar una sala.{% endif %}
+            </p>
+        </div>
+
+        <div class="p-6">
+            <form class="space-y-5 [&_label]:mb-1.5 [&_label]:block [&_label]:text-sm [&_label]:font-medium [&_label]:text-gray-700 [&_label]:dark:text-gray-200 [&_input:not([type=checkbox])]:min-h-11 [&_input:not([type=checkbox])]:w-full [&_input:not([type=checkbox])]:rounded-lg [&_input:not([type=checkbox])]:border [&_input:not([type=checkbox])]:border-gray-300 [&_input:not([type=checkbox])]:bg-white [&_input:not([type=checkbox])]:px-3 [&_input:not([type=checkbox])]:py-2 [&_input:not([type=checkbox])]:text-sm [&_input:not([type=checkbox])]:text-gray-900 [&_input:not([type=checkbox])]:shadow-sm [&_input:not([type=checkbox])]:outline-none [&_input:not([type=checkbox])]:focus:border-indigo-500 [&_input:not([type=checkbox])]:focus:ring-2 [&_input:not([type=checkbox])]:focus:ring-indigo-500/20 [&_input:not([type=checkbox])]:dark:border-gray-600 [&_input:not([type=checkbox])]:dark:bg-gray-800 [&_input:not([type=checkbox])]:dark:text-white [&_select]:min-h-11 [&_select]:w-full [&_select]:rounded-lg [&_select]:border [&_select]:border-gray-300 [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-gray-900 [&_select]:shadow-sm [&_select]:outline-none [&_select]:focus:border-indigo-500 [&_select]:focus:ring-2 [&_select]:focus:ring-indigo-500/20 [&_select]:dark:border-gray-600 [&_select]:dark:bg-gray-800 [&_select]:dark:text-white" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="flex flex-col gap-3 pt-2 sm:flex-row">
+                    <button type="submit" class="flex-1 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
+                        {% if object %}Guardar cambios{% else %}Crear sala{% endif %}
+                    </button>
+                    <a href="{% url 'halls:list' %}" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 {% endblock %}

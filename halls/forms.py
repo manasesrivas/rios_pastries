@@ -8,7 +8,7 @@ class HallForm(forms.ModelForm):
         model = Hall
         fields = ['venue', 'name', 'image', 'capacity', 'price', 'status']
         widgets = {
-            'image': forms.URLInput(attrs={'placeholder': 'URL de la imagen'}),
+            'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
             'capacity': forms.NumberInput(attrs={'min': 1}),
             'price': forms.NumberInput(attrs={'min': 0, 'step': '0.01'}),
         }

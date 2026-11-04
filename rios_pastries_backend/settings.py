@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RIOS_PASTRIES_EXTERNAL_HOSTNAME')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('RENDER_EXTERNAL_HOSTNAME') if False else True
 
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME, 'localhost', '127.0.0.1']
@@ -36,11 +36,11 @@ if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS = [
         f'https://{RENDER_EXTERNAL_HOSTNAME}',
     ]
-else:
+# else:
     # Configuración de respaldo manual si es necesario
     ALLOWED_HOSTS = [
-        'localhost',
-        '127.0.0.1',
+        # 'localhost',
+        # '127.0.0.1',
     ]
 
 
@@ -101,7 +101,7 @@ TAILWIND_APP_NAME = 'theme'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
