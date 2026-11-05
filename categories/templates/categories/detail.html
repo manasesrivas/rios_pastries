@@ -1,13 +1,43 @@
 {% extends 'base.html' %}
 
+{% block title %}{{ category.name }} | Categorías{% endblock %}
+
 {% block content %}
-<h1>Detalle de categoría</h1>
+<section class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <nav class="mb-5 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-label="Navegación">
+        <a class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300" href="{% url 'categories:list' %}">Volver a categorías</a>
+        <span aria-hidden="true">/</span>
+        <span class="break-words" aria-current="page">{{ category.name }}</span>
+    </nav>
 
-<p>ID: {{ category.pk }}</p>
-<p>Nombre: {{ category.name }}</p>
+    <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-700 dark:bg-gray-900">
+        <header class="border-b border-gray-200 p-6 dark:border-gray-700 sm:p-8">
+            <p class="text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Categoría</p>
+            <h1 class="mt-2 break-words text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{{ category.name }}</h1>
+        </header>
 
-<a href="{% url 'categories:list' %}">
-    Volver
-</a>
+        <div class="p-6 sm:p-8">
+            <dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificador</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-white">{{ category.pk }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
+                    <dd class="mt-1">
+                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {% if category.status == 'activo' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% else %}bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300{% endif %}">
+                            {{ category.get_status_display }}
+                        </span>
+                    </dd>
+                </div>
+            </dl>
 
+            <div class="mt-8 flex flex-wrap gap-3 border-t border-gray-200 pt-6 dark:border-gray-700" aria-label="Acciones de la categoría">
+                <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900" href="{% url 'categories:update' category.pk %}">Editar categoría</a>
+                <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900" href="{% url 'categories:delete' category.pk %}">Eliminar categoría</a>
+                <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'categories:list' %}">Volver</a>
+            </div>
+        </div>
+    </article>
+</section>
 {% endblock %}

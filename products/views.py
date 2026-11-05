@@ -24,6 +24,12 @@ class ProductListView(PermissionsClient, ListView):
     context_object_name = 'products'
     ordering = ['name']
 
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     if self.request.user.groups.filter(name='Cliente').exists():
+    #         queryset = queryset.filter(available=True)
+    #     return queryset
+
 class ProductDetailView(PermissionsClient, DetailView):
     model = Product
     template_name = 'products/detail.html'

@@ -1,4 +1,7 @@
 from django import forms
+from django.db.models import Q
+from categories.models import Category
+
 from .models import Product
 
 
@@ -50,3 +53,15 @@ class ProductForm(forms.ModelForm):
                 'class': 'form-check-input',
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        active_categories = Category.objects.filter(
+            status=Category.Status.ACTIVO,
+        )
+        if self.instance.pk and self.instance.category_id:
+            active_categories = Category.objects.filter(
+                Q(status=Category.Status.ACTIVO)
+                | Q(pk=self.instance.category_id)
+            )
+        self.fields['category'].queryset = active_categories.order_by('name')

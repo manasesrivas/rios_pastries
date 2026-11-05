@@ -1,31 +1,41 @@
 {% extends 'base.html' %}
 
+{% block title %}Categorías{% endblock %}
+
 {% block content %}
-<h1>Lista de categorías</h1>
+<section class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Categorías</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Administra las categorías del catálogo.</p>
+        </div>
+        <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'categories:create' %}">
+            Crear categoría
+        </a>
+    </header>
 
-<a href="{% url 'categories:create' %}">
-    Crear categoría
-</a>
-
-<ul>
-    {% for category in categories %}
-        <li>
-            {{ category.name }}
-
-            <a href="{% url 'categories:detail' category.pk %}">
-                Ver
-            </a>
-
-            <a href="{% url 'categories:update' category.pk %}">
-                Editar
-            </a>
-
-            <a href="{% url 'categories:delete' category.pk %}">
-                Eliminar
-            </a>
-        </li>
-    {% empty %}
-        <li>No hay categorías registradas.</li>
-    {% endfor %}
-</ul>
+    <ul class="space-y-4">
+        {% for category in categories %}
+            <li>
+                <article class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0">
+                        <h2 class="truncate text-lg font-semibold text-gray-900 dark:text-white">{{ category.name }}</h2>
+                        <span class="mt-2 inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                            {{ category.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a class="inline-flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950" href="{% url 'categories:detail' category.pk %}">
+                            Ver
+                        </a>
+                    </div>
+                </article>
+            </li>
+        {% empty %}
+            <li class="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                No hay categorías activas registradas.
+            </li>
+        {% endfor %}
+    </ul>
+</section>
 {% endblock %}

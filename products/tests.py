@@ -24,6 +24,10 @@ class ProductCreatePermissionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Crear producto')
+        self.assertContains(response, '[&_input:not([type=checkbox])]:w-full')
+        self.assertContains(response, '[&_textarea]:min-h-32')
+        self.assertContains(response, '[&_select]:w-full')
+        self.assertContains(response, '[&_input[type=checkbox]]:accent-indigo-600')
 
 
 class ProductListCardTests(TestCase):
@@ -80,6 +84,44 @@ class ProductListCardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Imagen no disponible')
+
+    def test_client_only_sees_available_products(self):
+        client_group, _ = Group.objects.get_or_create(name='Cliente')
+        self.user.groups.add(client_group)
+        Product.objects.create(
+            name='Pastel disponible',
+            description='Producto disponible.',
+            price='8.00',
+            category=self.category,
+            available=True,
+        )
+        Product.objects.create(
+            name='Pastel no disponible',
+            description='Producto no disponible.',
+            price='9.00',
+            category=self.category,
+            available=False,
+        )
+
+        response = self.client.get(reverse('products:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pastel disponible')
+        self.assertNotContains(response, 'Pastel no disponible')
+
+    def test_non_client_can_see_unavailable_products(self):
+        Product.objects.create(
+            name='Pastel no disponible',
+            description='Producto no disponible.',
+            price='9.00',
+            category=self.category,
+            available=False,
+        )
+
+        response = self.client.get(reverse('products:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pastel no disponible')
 
     def test_product_card_is_a_single_link_without_edit_or_delete_actions(self):
         product = Product.objects.create(

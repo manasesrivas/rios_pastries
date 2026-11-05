@@ -27,7 +27,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <h1 class="min-w-0 break-words text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">{{ product.name }}</h1>
                 <span class="w-fit shrink-0 rounded-full px-3 py-1 text-xs font-semibold {% if product.available %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% else %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% endif %}">
-                    {% if product.available %}Disponible{% else %}No disponible{% endif %}
+                    {% if product.available %}Disponible{% else %}Agotado{% endif %}
                 </span>
             </div>
 
@@ -36,20 +36,11 @@
                 {{ product.description|default:"Este producto todavía no tiene una descripción." }}
             </p>
 
-            <div class="mt-6 flex items-center gap-2 text-sm font-medium {% if product.stock > 0 %}text-green-700 dark:text-green-400{% else %}text-red-700 dark:text-red-400{% endif %}">
-                <span class="h-2.5 w-2.5 rounded-full {% if product.stock > 0 %}bg-green-500{% else %}bg-red-500{% endif %}" aria-hidden="true"></span>
-                {% if product.stock > 0 %}
-                    {{ product.stock }} {% if product.stock == 1 %}unidad disponible{% else %}unidades disponibles{% endif %}
-                {% else %}
-                    Sin existencias
-                {% endif %}
-            </div>
-
             {% if perms.products.change_product or perms.products.delete_product %}
                 <div class="mt-6 flex flex-wrap gap-3" aria-label="Acciones del producto">
                     {% if perms.products.change_product %}
                         <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900" href="{% url 'products:update' product.pk %}">
-                            Actualizar producto
+                            Editar producto
                         </a>
                     {% endif %}
                     {% if perms.products.delete_product %}
@@ -60,7 +51,7 @@
                 </div>
             {% endif %}
 
-            {% if request.user|has_group:"Cliente" and product.available and product.stock > 0 %}
+            {% if request.user|has_group:"Cliente" and product.available %}
                 <form class="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700" action="{% url 'orders:create' %}" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.pk }}">
