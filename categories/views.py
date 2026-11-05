@@ -1,5 +1,6 @@
 
 from django.urls import reverse_lazy
+from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
     DetailView,
@@ -19,12 +20,18 @@ class CategoriesListView(ListView):
     context_object_name = 'categories'
     ordering = ['name']
 
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Category.Status.ACTIVO)
+
 
 # Mostrar el detalle de una categoría
 class CategoriesDetailView(DetailView):
     model = Category
     template_name = 'categories/detail.html'
     context_object_name = 'category'
+
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Category.Status.ACTIVO)
 
 
 # Crear una categoría
@@ -42,9 +49,20 @@ class CategoriesUpdateView(UpdateView):
     template_name = 'categories/form.html'
     success_url = reverse_lazy('categories:list')
 
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Category.Status.ACTIVO)
 
-# Eliminar una categoría
+
+# Marcar una categoría como eliminada
 class CategoriesDeleteView(DeleteView):
     model = Category
     template_name = 'categories/confirm_delete.html'
     success_url = reverse_lazy('categories:list')
+
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Category.Status.ACTIVO)
+
+    def form_valid(self, form):
+        self.object.status = Category.Status.ELIMINADO
+        self.object.save(update_fields=['status'])
+        return HttpResponseRedirect(self.get_success_url())
