@@ -36,11 +36,9 @@ if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS = [
         f'https://{RENDER_EXTERNAL_HOSTNAME}',
     ]
-# else:
+else:
     # Configuración de respaldo manual si es necesario
     ALLOWED_HOSTS = [
-        # 'localhost',
-        # '127.0.0.1',
     ]
 
 
