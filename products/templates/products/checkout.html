@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Finalizar pedido{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Finalizar pedido</h1>
+
+    <form id="checkout-form" class="mt-6" method="post" action="{% url 'orders:checkout' %}">
+        {% csrf_token %}
+
+        {# Los inputs product_id / quantity se generan con JS desde localStorage #}
+        <div id="checkout-hidden"></div>
+
+        {# Productos del carrito #}
+        <div id="checkout-items" class="space-y-3"></div>
+
+        <p id="checkout-empty" class="hidden rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            Tu carrito está vacío.
+            <a class="font-semibold text-indigo-600 hover:underline dark:text-indigo-400" href="{% url 'products:list' %}">Ver productos</a>
+        </p>
+
+        {# Campos del pedido #}
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.metodo_pago.id_for_label }}">
+                    {{ order_form.metodo_pago.label }}
+                </label>
+                {{ order_form.metodo_pago }}
+                {% for error in order_form.metodo_pago.errors %}
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.tipo_entrega.id_for_label }}">
+                    {{ order_form.tipo_entrega.label }}
+                </label>
+                {{ order_form.tipo_entrega }}
+                {% for error in order_form.tipo_entrega.errors %}
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Total y envío #}
+        <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
+            <p class="text-lg font-bold text-gray-900 dark:text-white">
+                Total: <span id="checkout-total" class="text-indigo-700 dark:text-indigo-300">$0.00</span>
+            </p>
+        </div>
+        <button id="checkout-submit" type="submit" disabled
+                class="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">
+            Realizar pedido
+        </button>
+    </form>
+</section>
+
+<script>
+    (() => {
+        const readCart = () => {
+            try {
+                const data = JSON.parse(localStorage.getItem('cart'));
+                return Array.isArray(data) ? data : [];
+            } catch {
+                return [];
+            }
+        };
+
+        const money = (n) =>
+            '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const escapeHtml = (value) =>
+            String(value ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+
+        const itemTemplate = (item) => `
+            <article class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                    <h3 class="break-words font-semibold text-gray-900 dark:text-white">${escapeHtml(item.name)}</h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        Cantidad: ${item.quantity} <span aria-hidden="true">·</span>
+                        Precio unitario: ${money(item.price)}
+                    </p>
+                </div>
+                <div class="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
+                    <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                        ${escapeHtml(item.category)}
+                    </span>
+                    <p class="font-bold text-gray-900 dark:text-white">${money(item.price * item.quantity)}</p>
+                </div>
+            </article>`;
+
+        const hiddenInputs = (item) => `
+            <input type="hidden" name="product_id" value="${escapeHtml(item.id)}">
+            <input type="hidden" name="quantity" value="${Number(item.quantity) || 1}">`;
+
+        const items = readCart();
+        const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+        document.getElementById('checkout-items').innerHTML = items.map(itemTemplate).join('');
+        document.getElementById('checkout-hidden').innerHTML = items.map(hiddenInputs).join('');
+        document.getElementById('checkout-total').textContent = money(total);
+        document.getElementById('checkout-empty').classList.toggle('hidden', items.length > 0);
+        document.getElementById('checkout-submit').disabled = items.length === 0;
+    })();
+</script>
+{% endblock %}

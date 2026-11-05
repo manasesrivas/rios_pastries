@@ -62,3 +62,5 @@ class ProductDeleteView(AdminPermission, DeleteView):
     template_name = 'products/confirm_delete.html'
     context_object_name = 'product'
     success_url = reverse_lazy('products:list')
+
+

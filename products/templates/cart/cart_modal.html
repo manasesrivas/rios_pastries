@@ -1,0 +1,74 @@
+{# Botón flotante para abrir el carrito #}
+<button type="button" data-cart-open
+        class="fixed bottom-5 right-5 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        aria-haspopup="dialog" aria-controls="cart-modal">
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2 5h13M9 21a1 1 0 100-2 1 1 0 000 2zm9 0a1 1 0 100-2 1 1 0 000 2z"/>
+    </svg>
+    Carrito
+    <span data-cart-count class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-indigo-700">0</span>
+</button>
+
+{# Modal #}
+<div id="cart-modal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+    {# Fondo oscuro #}
+    {% csrf_token %}
+    <div data-cart-close class="absolute inset-0 bg-gray-900/50"></div>
+
+    <div class="relative flex min-h-full items-end justify-center p-0 sm:items-center sm:p-6">
+        <div class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl bg-white text-gray-900 shadow-2xl sm:rounded-2xl">
+
+            {# Encabezado #}
+            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
+                <h2 id="cart-title" class="text-xl font-bold text-gray-900">Tu carrito</h2>
+                <button type="button" data-cart-close aria-label="Cerrar carrito"
+                        class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {# Cuerpo con scroll #}
+            <div class="flex-1 overflow-y-auto">
+                <p id="cart-empty" class="hidden px-6 py-12 text-center text-gray-500">Tu carrito está vacío.</p>
+
+                <table id="cart-table" class="w-full text-left text-sm">
+                    <thead class="hidden bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-600 md:table-header-group">
+                        <tr>
+                            <th class="px-4 py-3">Imagen</th>
+                            <th class="px-4 py-3">Producto</th>
+                            <th class="px-4 py-3">Categoría</th>
+                            <th class="px-4 py-3">Precio</th>
+                            <th class="px-4 py-3">Cantidad</th>
+                            <th class="px-4 py-3">Subtotal</th>
+                            <th class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-body" class="block md:table-row-group"></tbody>
+                </table>
+            </div>
+
+            {# Pie con total #}
+            <div class="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p class="text-lg font-bold text-gray-900">
+                    Total: <span id="cart-total" class="text-indigo-700">$0.00</span>
+                </p>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <button type="button" data-cart-clear
+                            class="min-h-11 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-600">
+                        Vaciar carrito
+                    </button>
+                    <button type="button" data-cart-close
+                            class="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+                        Seguir comprando
+                    </button>
+                    <button type="button" data-cart-checkout data-url="{% url 'orders:create' %}"
+                            class="min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-green-600">
+                        Realizar pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
