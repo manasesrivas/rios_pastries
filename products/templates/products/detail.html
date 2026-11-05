@@ -53,7 +53,7 @@
             {% endif %}
 
             {# ===== Botón agregar al carrito (localStorage) ===== #}
-            {% if product.available %}
+            {% if product.available and request.user|has_group:"Cliente" %}
                 <button type="button"
                         data-add-to-cart
                         data-id="{{ product.pk }}"
@@ -86,26 +86,7 @@
                         <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
                     {% endfor %}
 
-                    <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.metodo_pago.id_for_label }}">
-                                {{ order_form.metodo_pago.label }}
-                            </label>
-                            {{ order_form.metodo_pago }}
-                            {% for error in order_form.metodo_pago.errors %}
-                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.tipo_entrega.id_for_label }}">
-                                {{ order_form.tipo_entrega.label }}
-                            </label>
-                            {{ order_form.tipo_entrega }}
-                            {% for error in order_form.tipo_entrega.errors %}
-                                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    </div>
+                    
                     <button class="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">
                         Realizar pedido
                     </button>
@@ -115,9 +96,7 @@
     </article>
 </section>
 
-{# Modal del carrito + lógica #}
-{% include 'cart/cart_modal.html' %}
-<script src="{% static 'js/cart.js' %}"></script>
+
 
 {% if request.user|has_group:"Cliente" and product.available and product.stock > 0 %}
     <script>

@@ -187,9 +187,6 @@
         if (e.target.closest('[data-cart-close]')) return closeModal();
         if (e.target.closest('[data-cart-clear]')) return clearCart();
 
-        const checkoutBtn = e.target.closest('[data-cart-checkout]');
-        if (checkoutBtn) return checkout(checkoutBtn.dataset.url);
-
         const actionBtn = e.target.closest('[data-action]');
         if (actionBtn) {
             const id = actionBtn.closest('tr')?.dataset.id;

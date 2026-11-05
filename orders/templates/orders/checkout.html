@@ -6,7 +6,7 @@
 <section class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
     <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Finalizar pedido</h1>
 
-    <form id="checkout-form" class="mt-6" method="post" action="{% url 'orders:checkout' %}">
+    <form id="checkout-form" class="mt-6" method="post" action="{% url 'orders:create' %}">
         {% csrf_token %}
 
         {# Los inputs product_id / quantity se generan con JS desde localStorage #}

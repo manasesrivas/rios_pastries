@@ -61,9 +61,12 @@
                     <a data-field="detail-link" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'orders:detail' order.pk %}">
                         Ver pedido
                     </a>
+                    {% if perms.users.change_order %}
+
                     <a data-field="edit-link" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
                         Editar
                     </a>
+                    {% endif %}
                 </footer>
             </article>
         {% empty %}
@@ -89,7 +92,9 @@
                 </header>
                 <footer class="flex flex-wrap justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
                     <a data-field="detail-link" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">Ver pedido</a>
+                    {% if perms.users.change_order %}
                     <a data-field="edit-link" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Editar</a>
+                    {% endif %}
                 </footer>
             </article>
         </template>

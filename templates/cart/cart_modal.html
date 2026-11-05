@@ -12,7 +12,6 @@
 {# Modal #}
 <div id="cart-modal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="cart-title">
     {# Fondo oscuro #}
-    {% csrf_token %}
     <div data-cart-close class="absolute inset-0 bg-gray-900/50"></div>
 
     <div class="relative flex min-h-full items-end justify-center p-0 sm:items-center sm:p-6">
@@ -59,14 +58,11 @@
                             class="min-h-11 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-600">
                         Vaciar carrito
                     </button>
-                    <button type="button" data-cart-close
-                            class="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
-                        Seguir comprando
-                    </button>
-                    <button type="button" data-cart-checkout data-url="{% url 'orders:create' %}"
-                            class="min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-green-600">
+                    <a href="{% url 'orders:checkout' %}"
+                    data-cart-checkout
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-green-600">
                         Realizar pedido
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

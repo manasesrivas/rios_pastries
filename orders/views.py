@@ -251,7 +251,9 @@ class OrderDeleteView(AdminPermission, DeleteView):
     template_name = 'orders/confirm_delete.html'
     success_url = reverse_lazy('orders:list')
 
-class ProductsOrderListView(ListView):
-    model = Product
-    template_name = 'orders/user/list.html'
-    context_object_name = 'products'
+
+class OrderCheckoutView(LoginRequiredMixin, View):
+    template_name = 'orders/checkout.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {'order_form': OrderForm()})

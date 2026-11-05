@@ -67,12 +67,6 @@
                                 Precio unitario: ${{ detalle.price|floatformat:"2u" }}
                             </p>
                         </div>
-                        <div class="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold {% if detalle.status.name == 'entregado' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% elif detalle.status.name == 'cancelado' %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% else %}bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300{% endif %}">
-                                {{ detalle.status.get_name_display|default:detalle.status.name|default:"Pendiente" }}
-                            </span>
-                            <p class="font-bold text-gray-900 dark:text-white">${{ detalle.subtotal|floatformat:"2u" }}</p>
-                        </div>
                     </article>
                 {% empty %}
                     <p class="rounded-xl border border-dashed border-gray-300 px-5 py-10 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
@@ -86,9 +80,11 @@
             <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'orders:list' %}">
                 Volver a pedidos
             </a>
+            {% if perms.users.change_order %}
             <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
                 Editar pedido
             </a>
+            {% endif %}
         </footer>
     </article>
 </section>

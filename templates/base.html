@@ -1,4 +1,4 @@
-{% load static tailwind_tags %}
+{% load static tailwind_tags user_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,6 +87,11 @@
         {% endblock %}
     </main>
 
+    
+    {% if request.user|has_group:"Cliente" %}
+        {% include 'cart/cart_modal.html' %}
+        <script src="{% static 'js/cart.js' %}"></script>
+    {% endif %}
     <script>
         (function () {
             const button = document.getElementById('theme-toggle');
