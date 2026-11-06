@@ -8,6 +8,7 @@ class EstadoReservacion(models.TextChoices):
     PENDIENTE = 'PENDIENTE', 'Pendiente'
     CONFIRMADA = 'CONFIRMADA', 'Confirmada'
     CANCELADA = 'CANCELADA', 'Cancelada'
+    FINALIZDA = 'FINALIZADA' 'Finalizada'
     ELIMINADA = 'ELIMINADA', 'Eliminada'
 
 
