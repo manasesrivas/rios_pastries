@@ -1,11 +1,15 @@
 from django.db import models
+from django.db.models import Q
 from venues.models import Venue
 from users.models import User
+
 
 class EstadoReservacion(models.TextChoices):
     PENDIENTE = 'PENDIENTE', 'Pendiente'
     CONFIRMADA = 'CONFIRMADA', 'Confirmada'
     CANCELADA = 'CANCELADA', 'Cancelada'
+    ELIMINADA = 'ELIMINADA', 'Eliminada'
+
 
 class Reservation(models.Model):
     cliente = models.ForeignKey(
@@ -29,8 +33,19 @@ class Reservation(models.Model):
 
     class Meta:
         constraints = [
+            # Solo las reservaciones activas bloquean la sala en esa fecha.
             models.UniqueConstraint(
                 fields=['sala', 'fecha_evento'],
-                name='unique_sala_fecha_evento'
+                condition=~Q(estado__in=[
+                    EstadoReservacion.CANCELADA,
+                    EstadoReservacion.ELIMINADA,
+                ]),
+                name='unique_sala_fecha_evento',
+                violation_error_message=(
+                    'Esta sala ya tiene una reservación activa para esa fecha.'
+                ),
             )
         ]
+
+    def __str__(self):
+        return f'Reservación #{self.pk} - {self.sala} ({self.fecha_evento})'

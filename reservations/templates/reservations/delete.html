@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar reservación #{{ reservation.pk }} | Reservaciones{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="overflow-hidden rounded-xl border border-red-200 bg-white shadow-lg dark:border-red-900 dark:bg-gray-900">
+        <div class="border-b border-red-100 bg-red-50 px-6 py-5 dark:border-red-900 dark:bg-red-950/40">
+            <p class="text-sm font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Confirmación de eliminación</p>
+            <h1 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+                Eliminar reservación #{{ reservation.pk }}
+            </h1>
+        </div>
+
+        <div class="space-y-6 p-6">
+            <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <p class="text-sm text-gray-600 dark:text-gray-300">Estás a punto de eliminar esta reservación:</p>
+                <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{{ reservation.sala.name }}</p>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    {{ reservation.fecha_evento|date:"d/m/Y" }} · {{ reservation.cantidad_personas }} personas
+                </p>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    Cliente: {{ reservation.cliente.nombres|default:reservation.cliente.email }} {{ reservation.cliente.apellidos|default:"" }}
+                </p>
+                <div class="mt-3">
+                    {% include 'reservations/_estado_badge.html' with reservation=reservation %}
+                </div>
+            </div>
+
+            <div class="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200" role="alert">
+                La reservación se marcará como <strong>Eliminada</strong> y la sala quedará libre para esa fecha.
+            </div>
+
+            <form method="post" class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                {% csrf_token %}
+                <a href="{% url 'reservations:detail' reservation.pk %}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                    Cancelar
+                </a>
+                <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900">
+                    Confirmar eliminación
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

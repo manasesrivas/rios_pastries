@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservaciones | Ríos Pastries{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Reservaciones</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Consulta y filtra las reservaciones por estado.</p>
+        </div>
+        {% if perms.reservations.add_reservation %}
+            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'reservations:create' %}">
+                Crear reservación
+            </a>
+        {% endif %}
+    </header>
+
+    <nav class="mb-6 flex gap-2 overflow-x-auto pb-2" aria-label="Filtrar reservaciones por estado">
+        <a class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {% if not selected_estado %}bg-indigo-600 text-white{% else %}bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-indigo-50 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-800{% endif %}" href="{% url 'reservations:list' %}" {% if not selected_estado %}aria-current="page"{% endif %}>
+            Todas
+        </a>
+        {% for estado_value, estado_label in estado_choices %}
+            <a class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {% if selected_estado == estado_value %}bg-indigo-600 text-white{% else %}bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-indigo-50 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-800{% endif %}" href="{% url 'reservations:list' %}?estado={{ estado_value|urlencode }}" {% if selected_estado == estado_value %}aria-current="page"{% endif %}>
+                {{ estado_label }}
+            </a>
+        {% endfor %}
+    </nav>
+
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {% for reservation in reservations %}
+            <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <header class="flex flex-col gap-2 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Reservación #{{ reservation.pk }}</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ reservation.fecha_evento|date:"d/m/Y" }} · {{ reservation.sala.name }}
+                        </p>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            {{ reservation.cliente.nombres|default:reservation.cliente.email }} {{ reservation.cliente.apellidos|default:"" }}
+                        </p>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            Personas: {{ reservation.cantidad_personas }}
+                        </p>
+                    </div>
+                    {% include 'reservations/_estado_badge.html' with reservation=reservation %}
+                </header>
+
+                <footer class="flex flex-wrap justify-end gap-3 px-5 py-4">
+                    <a class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'reservations:detail' reservation.pk %}">
+                        Ver reservación
+                    </a>
+                    {% if perms.reservations.change_reservation and reservation.estado != 'ELIMINADA' %}
+                        <a class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'reservations:update' reservation.pk %}">
+                            Editar
+                        </a>
+                    {% endif %}
+                </footer>
+            </article>
+        {% empty %}
+            <p class="col-span-full rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                {% if selected_estado %}
+                    No hay reservaciones con este estado.
+                {% else %}
+                    No hay reservaciones registradas.
+                {% endif %}
+            </p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

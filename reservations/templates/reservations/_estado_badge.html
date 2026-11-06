@@ -1,0 +1,4 @@
+{# Uso: {% include 'reservations/_estado_badge.html' with reservation=reservation %} #}
+<span class="inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold {% if reservation.estado == 'CONFIRMADA' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% elif reservation.estado == 'PENDIENTE' %}bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300{% elif reservation.estado == 'CANCELADA' %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% else %}bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+    {{ reservation.get_estado_display }}
+</span>

@@ -86,6 +86,19 @@ configuracion_permisos = [
         'permisos': ['view_venue'],
         'grupo': 'Cliente',
     },
+    {
+    'app': 'reservations',
+    'modelo': 'reservation',
+    'permisos': ['view_reservation', 'add_reservation'],
+    'grupo': 'Cliente',
+},
+{
+    'app': 'reservations',
+    'modelo': 'reservation',
+    'permisos': ['view_reservation', 'add_reservation',
+                 'change_reservation', 'delete_reservation'],
+    'grupo': 'Administrador',
+},
 ]
 
 
