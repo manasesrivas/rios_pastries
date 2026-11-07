@@ -9,7 +9,7 @@ from django.views.generic import (
     UpdateView,
 )
 
-from .forms import ReservationForm
+from .forms import ReservationCreateForm, ReservationUpdateForm
 from .models import EstadoReservacion, Reservation
 
 
@@ -83,30 +83,86 @@ class ReservationDetailView(ReservationQuerysetMixin, PermissionsClient, DetailV
 
 
 class ReservationFormMixin:
-    form_class = ReservationForm
+    form_class = ReservationCreateForm
     template_name = 'reservations/form.html'
     success_url = reverse_lazy('reservations:list')
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        kwargs['can_manage'] = can_manage_reservations(self.request.user)
-        return kwargs
 
+
+from halls.models import Hall
+from django.shortcuts import get_object_or_404
 
 class ReservationCreateView(ReservationFormMixin, PermissionsClient, CreateView):
     model = Reservation
 
+    def hall(self):
+        return get_object_or_404(Hall, pk=self.kwargs.get('pk'))
 
-class ReservationUpdateView(ReservationFormMixin, AdminPermission, UpdateView):
+    def form_valid(self, form):
+        form.instance.cliente = self.request.user
+        form.instance.sala = self.hall()
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            # Respaldo: dos personas guardando a la vez
+            form.add_error(None, 'Esta sala ya tiene una reservación activa para esa fecha.')
+            return self.form_invalid(form)
+
+        return response
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['hall'] = self.hall()
+        return context
+    
+from django.db import IntegrityError
+
+class ReservationUpdateView(AdminPermission, UpdateView):
     model = Reservation
     context_object_name = 'reservation'
-
+    form_class = ReservationUpdateForm
+    template_name = 'reservations/update.html'
+    success_url = reverse_lazy('reservations:list')
+    
     def get_queryset(self):
         # Una reservación eliminada ya no se puede editar.
         return Reservation.objects.select_related('cliente', 'sala').exclude(
             estado=EstadoReservacion.ELIMINADA
         )
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['sala'] = self.object.sala
+        kwargs['cliente'] = self.object.cliente
+        kwargs['can_manage'] = can_manage_reservations(self.request.user)
+        return kwargs
+    
+    def form_valid(self, form):
+        reservation = form.instance   # ya trae los valores nuevos del formulario
+
+        # 1. ¿Hay otra reservación activa para esa sala y esa fecha?
+        if reservation.estado in (EstadoReservacion.PENDIENTE, EstadoReservacion.CONFIRMADA):
+            hay_choque = Reservation.objects.filter(
+                sala=reservation.sala,
+                fecha_evento=reservation.fecha_evento,
+                estado__in=[EstadoReservacion.PENDIENTE, EstadoReservacion.CONFIRMADA],
+            ).exclude(pk=reservation.pk).exists()
+
+            if hay_choque:
+                form.add_error(None, 'Esta sala ya tiene una reservación activa para esa fecha.')
+                return self.form_invalid(form)
+
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            # Respaldo: dos personas guardando a la vez
+            form.add_error(None, 'Esta sala ya tiene una reservación activa para esa fecha.')
+            return self.form_invalid(form)
+
+        return response
 
 
 class ReservationDeleteView(AdminPermission, DeleteView):

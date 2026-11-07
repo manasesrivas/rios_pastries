@@ -44,6 +44,9 @@
             </dl>
 
             <div class="mt-auto flex flex-wrap gap-3 pt-8" aria-label="Acciones de la sala">
+                {% if perms.reservations.add_reservation %}
+                    <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900" href="{% url 'reservations:create' hall.pk %}">Reservar sala</a>
+                {% endif %}
                 {% if perms.halls.change_hall %}
                     <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900" href="{% url 'halls:update' hall.pk %}">Editar sala</a>
                 {% endif %}

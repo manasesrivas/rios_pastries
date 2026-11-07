@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Q
-from venues.models import Venue
+from halls.models import Hall
 from users.models import User
 
 
@@ -22,14 +22,14 @@ class Reservation(models.Model):
 
     cantidad_personas = models.PositiveIntegerField()
     sala = models.ForeignKey(
-        Venue,
+        Hall,
         on_delete=models.PROTECT,
         related_name='reservations'
     )
     estado = models.CharField(
         max_length=20,
         choices=EstadoReservacion.choices,
-        default=EstadoReservacion.PENDIENTE
+        default=EstadoReservacion.CONFIRMADA
     )
 
     class Meta:

@@ -9,11 +9,6 @@
             <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Reservaciones</h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Consulta y filtra las reservaciones por estado.</p>
         </div>
-        {% if perms.reservations.add_reservation %}
-            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'reservations:create' %}">
-                Crear reservación
-            </a>
-        {% endif %}
     </header>
 
     <nav class="mb-6 flex gap-2 overflow-x-auto pb-2" aria-label="Filtrar reservaciones por estado">
@@ -32,12 +27,16 @@
             <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <header class="flex flex-col gap-2 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-start sm:justify-between">
                     <div class="min-w-0">
-                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Reservación #{{ reservation.pk }}</h2>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Reservación {{ reservation.fecha_evento|date:"D d M Y" }}</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{reservation.sala.venue.name}} . {{reservation.sala.venue.address}}</p>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {{ reservation.fecha_evento|date:"d/m/Y" }} · {{ reservation.sala.name }}
+                            {{ reservation.sala.name }}
                         </p>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                             {{ reservation.cliente.nombres|default:reservation.cliente.email }} {{ reservation.cliente.apellidos|default:"" }}
+                        </p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ reservation.cliente.email }}
                         </p>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                             Personas: {{ reservation.cantidad_personas }}

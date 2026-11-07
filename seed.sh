@@ -6,4 +6,5 @@ python manage.py shell < create_users.py
 python manage.py shell < create_categories.py
 python manage.py shell < create_products.py
 python manage.py shell < create_statuses.py
+python manage.py shell < create_venue_and_halls.py
 python manage.py runserver
