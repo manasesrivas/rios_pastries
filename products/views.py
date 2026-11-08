@@ -11,6 +11,8 @@ from orders.forms import OrderForm
 from .models import Product
 from .forms import ProductForm
 
+from django.db.models import Q
+
 class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
     permission_required = 'products.view_product'
     raise_exception = True
@@ -24,11 +26,18 @@ class ProductListView(PermissionsClient, ListView):
     context_object_name = 'products'
     ordering = ['name']
 
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     if self.request.user.groups.filter(name='Cliente').exists():
-    #         queryset = queryset.filter(available=True)
-    #     return queryset
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        search = self.request.GET.get('search', '')
+
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(category__name__icontains=search)
+            )
+
+        return queryset
 
 class ProductDetailView(PermissionsClient, DetailView):
     model = Product

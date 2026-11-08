@@ -9,6 +9,24 @@
             <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Productos</h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Explora nuestro catálogo de productos.</p>
         </div>
+        <form method="GET" class="mb-6 flex gap-2">
+            <input
+                type="search"
+                name="search"
+                placeholder="Buscar productos o categorías..."
+                value="{{ request.GET.search }}"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2
+                    dark:border-gray-600 dark:bg-gray-800"
+            >
+
+            <button
+                type="submit"
+                class="rounded-lg bg-blue-600 px-5 py-2 text-white
+                    hover:bg-blue-700"
+            >
+                Buscar
+            </button>
+        </form>
         {% if perms.products.add_product %}
             <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'products:create' %}">
                 Crear producto
