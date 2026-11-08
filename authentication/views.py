@@ -1,20 +1,66 @@
 from django.shortcuts import render, HttpResponseRedirect, HttpResponse, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from .forms import LoginForm, UserRegisterForm
 from django.views import View
-from django.views.generic import CreateView
+from django.views.generic import CreateView, FormView
 from django.urls import reverse_lazy
-# Create your views here.
+
+from django.utils.http import urlsafe_base64_decode
+from django.contrib import messages
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import redirect
+from django.utils.encoding import force_str
+
+from .emails import send_verification_email
+
+from django import forms
+class ResendVerificationForm(forms.Form):
+    email = forms.EmailField(label='Correo Electronico')
+
+class ResendVerificationView(FormView):
+    form_class = ResendVerificationForm
+    template_name = 'authentication/resend_verification.html'
+    success_url = reverse_lazy('authentication:verification_email')
+
+    def form_valid(self, form):
+        User = get_user_model()
+        email = form.cleaned_data['email']
+
+        user = User.objects.filter(
+            email__iexact=email, is_active=False
+        )
+
+        if user:
+            send_verification_email(self.request, user)
+        return redirect(self.success_url)
+
+class ActivateAccountView(View):
+    def get(self, request, uidb64, token):
+        User = get_user_model()
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, 'Tu correo fue verificacdo correctamente')
+            return redirect('users:home')
+        messages.error(request, 'El enlace de verificacion es invaliddo')
+        return redirect('authentication:register')
 
 class UsersCreateView(CreateView):
     form_class = UserRegisterForm
     template_name = 'authentication/register.html'
-    success_url = reverse_lazy('users:home')
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        login(self.request, self.object)
+    success_url = reverse_lazy('authentication:verification_sent')
 
-        return response
+    def form_valid(self, form):
+        self.object = form.save()
+        send_verification_email(self.request, self.object)
+        return redirect(self.success_url)
 
 
 class LoginView(View): 

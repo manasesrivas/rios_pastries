@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import Group
 from django.contrib.auth.forms import UserCreationForm
+from django.core.validators import RegexValidator
 
 TAILWIND_INPUT_CLASSES = (
     'w-full rounded-lg border border-gray-300 bg-white px-4 py-3 '
@@ -42,18 +43,39 @@ from users.models import User
 
 
 class UserRegisterForm(UserCreationForm):
+    telefono = forms.CharField(
+            label="Teléfono",
+            max_length=9,
+            validators=[
+                RegexValidator(
+                    regex=r'^\d{4}-\d{4}$',
+                    message="Ingresa un teléfono de exactamente 9 dígitos."
+                )
+            ],
+            widget=forms.NumberInput(attrs={
+            'type': 'tel',
+            'placeholder': '1234-1234',
+            'maxlength': '9',
+            'pattern': r'[0-9]{4}-[0-9]{4}',
+            'required': True,
+            'class': TAILWIND_INPUT_CLASSES,
+            'pattern':"[0-9]{4}-[0-9]{4}"
+            })
+        )
     class Meta:
         model = User
         fields = [
             'nombres',
             'apellidos',
             'email',
+            'telefono'
         ]
 
         labels = {
             'nombres': 'Nombres',
             'apellidos': 'Apellidos',
             'email': 'Correo electrónico',
+            'telefono': 'Telefono'
         }
 
         widgets = {
@@ -101,10 +123,13 @@ class UserRegisterForm(UserCreationForm):
 
 
     def save(self, commit=True):
-        user = super().save(commit=commit)
+        user = super().save(commit=False)
+        user.is_active = True
+        user.save()
 
         if commit:
             grupo = Group.objects.get(name="Cliente")
+            print(f'grupo ===============================================>: {grupo}')
             user.groups.add(grupo)
 
         return user

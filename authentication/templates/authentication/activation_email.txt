@@ -1,0 +1,5 @@
+Hola {{ user.get_username }},
+
+Gracias por registrarte. Para activar tu cuenta, abre este enlace:
+
+{{ activation_url }}

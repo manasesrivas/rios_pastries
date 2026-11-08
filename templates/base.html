@@ -43,6 +43,35 @@
     </title>
 </head>
 <body class="bg-gray-100 text-gray-900 flex flex-col min-h-screen dark:bg-gray-950 dark:text-white">
+    {% if messages %}
+        <div class="fixed top-20 left-0 z-50 w-full pointer-events-none px-4 sm:px-6 lg:px-8"
+            aria-live="polite">
+
+            <div class="mx-auto w-full max-w-6xl space-y-3">
+
+                {% for message in messages %}
+                    <div role="alert"
+                        class="pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg bg-slate-950
+                        {% if message.tags == 'success' %}
+                            border-green-500 text-green-400
+                        {% elif message.tags == 'error' %}
+                            border-red-500 text-red-400
+                        {% elif message.tags == 'warning' %}
+                            border-yellow-500 text-yellow-400
+                        {% else %}
+                            border-indigo-500 text-indigo-400
+                        {% endif %}">
+
+                        <p class="min-w-0 break-words">
+                            {{ message }}
+                        </p>
+
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    {% endif %}
     {% if request.user.is_authenticated %}
     <header class="bg-white dark:bg-gray-900">
         <div class="flex w-full items-center justify-between gap-4 border-b border-gray-200 px-4 py-4 dark:border-gray-700 sm:px-6 lg:px-8">
