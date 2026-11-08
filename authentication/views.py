@@ -4,8 +4,8 @@ from .forms import LoginForm, UserRegisterForm
 from django.views import View
 from django.views.generic import CreateView, FormView
 from django.urls import reverse_lazy
-
 from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import redirect
@@ -95,4 +95,9 @@ def logout_view(request):
     logout(request)
     return redirect('authentication:login')
 
-            
+
+class AuthenticationResetPasswordView(PasswordResetView):
+    template_name='password_reset/password_reset_form.html'
+    email_template_name='password_reset/password_reset_email.txt'
+    subject_template_name='password_reset/password_reset_subject.txt'
+    success_url=reverse_lazy('authentication:password_reset_done')

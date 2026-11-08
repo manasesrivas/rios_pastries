@@ -45,6 +45,10 @@
                     {% for error in form.password.errors %}
                         <p class="mt-2 text-sm text-red-600">{{ error }}</p>
                     {% endfor %}
+                    <a href="{% url 'authentication:password_reset' %}"
+                        class="font-semibold text-indigo-600 hover:text-indigo-500">
+                        ¿Se te olvidó la contraseña?
+                    </a>
                 </div>
             </div>
 
