@@ -76,9 +76,6 @@
                                 // Borrar el carrito del almacenamiento local de forma garantizada
                                 localStorage.removeItem('cart');
                                 
-                                if (typeof updateCartUI === 'function') {
-                                    updateCartUI();
-                                }
                             });
                         </script>
                     {% else %}
