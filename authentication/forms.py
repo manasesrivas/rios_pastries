@@ -68,14 +68,16 @@ class UserRegisterForm(UserCreationForm):
             'nombres',
             'apellidos',
             'email',
-            'telefono'
+            'telefono',
+            'direccion'
         ]
 
         labels = {
             'nombres': 'Nombres',
             'apellidos': 'Apellidos',
             'email': 'Correo electrónico',
-            'telefono': 'Telefono'
+            'telefono': 'Telefono',
+            'direccion': 'Direccion'
         }
 
         widgets = {
@@ -94,6 +96,11 @@ class UserRegisterForm(UserCreationForm):
                 'placeholder': 'ejemplo@correo.com',
                 'autocomplete': 'email',
             }),
+            'direccion': forms.Textarea(
+                attrs={
+                    'class': TAILWIND_INPUT_CLASSES,
+                }
+            )
         }
 
         error_messages = {
@@ -108,6 +115,9 @@ class UserRegisterForm(UserCreationForm):
                 'invalid': 'Introduce un correo electrónico válido.',
                 'unique': 'Este correo electrónico ya está registrado.',
             },
+            'direccion': {
+                'required': 'La direccion es obligatoria.',
+            }
         }
 
     def __init__(self, *args, **kwargs):

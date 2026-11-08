@@ -47,6 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     apellidos = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=9, null=True, blank=True)
     email = models.EmailField(unique=True)
+    direccion = models.CharField(max_length=200, null=True, blank=True)
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
