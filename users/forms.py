@@ -233,11 +233,10 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['nombres', 'apellidos', 'telefono', 'email']
+        fields = ['nombres', 'apellidos', 'telefono']
         labels = {
             'nombres': 'Nombres',
             'apellidos': 'Apellidos',
-            'email': 'Correo electrónico',
         }
         widgets = {
             'nombres': forms.TextInput(attrs={

@@ -129,7 +129,6 @@ class UserRegisterForm(UserCreationForm):
 
         if commit:
             grupo = Group.objects.get(name="Cliente")
-            print(f'grupo ===============================================>: {grupo}')
             user.groups.add(grupo)
 
         return user
