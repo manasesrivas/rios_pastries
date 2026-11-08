@@ -208,4 +208,24 @@
     });
 
     document.addEventListener('DOMContentLoaded', render);
+    
+    
 })();
+
+function createOrder(btn){
+    const d = btn.dataset;
+
+    addItem({
+        id: d.id,
+        name: d.name,
+        category: d.category,
+        price: Number(d.price) || 0,
+        image: d.image || '',
+        stock: Number(d.stock) || 0,
+        quantity: qtyInput ? Number(qtyInput.value) || 1 : 1,
+    });
+
+    // Redirigir al checkout
+    window.location.href = d.checkoutUrl;
+
+}

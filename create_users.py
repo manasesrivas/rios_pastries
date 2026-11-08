@@ -14,6 +14,7 @@ usuarios = [
         "apellidos": "rivas",
         "grupo": None,
         "superusuario": True,
+        "direccion":"",
     },
     {
         "email": "administrador@example.com",
@@ -22,6 +23,7 @@ usuarios = [
         "apellidos": "Administrador",
         "grupo": "Administrador",
         "superusuario": False,
+        "direccion": "",
     },
     {
         "email": "empleado@example.com",
@@ -30,6 +32,7 @@ usuarios = [
         "apellidos": "el empleado",
         "grupo": "Empleado",
         "superusuario": False,
+        "direccion": "",
     },
     {
         "email": "empleado1@example.com",
@@ -38,6 +41,7 @@ usuarios = [
         "apellidos": "el empleado 1",
         "grupo": "Empleado",
         "superusuario": False,
+        "direccion": "",
     },
     {
         "email": "empleado2@example.com",
@@ -46,6 +50,7 @@ usuarios = [
         "apellidos": "el empleado 2",
         "grupo": "Empleado",
         "superusuario": False,
+        "direccion": "",
     },
     {
         "email": "cliente@example.com",
@@ -54,6 +59,7 @@ usuarios = [
         "apellidos": "Cliente",
         "grupo": "Cliente",
         "superusuario": False,
+        "direccion": "Residencial Los Pinos, Pasaje 3, Casa 12, San Salvador",
     },
     {
         "email": "cliente1@example.com",
@@ -62,6 +68,7 @@ usuarios = [
         "apellidos": "el Cliente 1",
         "grupo": "Cliente",
         "superusuario": False,
+        "direccion": "Colonia Las Flores, Avenida Central, Casa 24, Santa Tecla",
     },
     {
         "email": "cliente2@example.com",
@@ -70,6 +77,7 @@ usuarios = [
         "apellidos": "el Cliente 2",
         "grupo": "Cliente",
         "superusuario": False,
+        "direccion": "Residencial Valle Verde, Polígono B, Casa 8, Antiguo Cuscatlán",
     },
 ]
 
@@ -87,6 +95,7 @@ def crear_usuarios():
                 email=email,
                 nombres=datos["nombres"],
                 apellidos=datos["apellidos"],
+                direccion=datos['direccion']
             )
             usuario.set_password(datos["password"])
             usuario.save()

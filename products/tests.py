@@ -224,11 +224,10 @@ class ProductDetailTemplateTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'name="product_id"')
+        self.assertContains(response, 'id="quantity"')
         self.assertContains(response, 'name="quantity"')
-        self.assertContains(response, 'name="metodo_pago"')
-        self.assertContains(response, 'name="tipo_entrega"')
-        self.assertContains(response, 'Realizar pedido')
+        self.assertContains(response, 'value="1"')
+        self.assertContains(response, 'data-add-to-cart')
 
     def test_user_only_sees_product_actions_they_are_allowed_to_use(self):
         change_permission = Permission.objects.get(

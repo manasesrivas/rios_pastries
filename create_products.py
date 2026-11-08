@@ -20,7 +20,6 @@ def crear_productos():
                 "price": datos["price"],
                 "category": category,
                 "available": datos["available"],
-                "stock": datos['stock']
             },
         )
 

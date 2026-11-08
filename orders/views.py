@@ -146,14 +146,9 @@ class OrderCreateView(PermissionsClient, View):
             )
 
         for product_id, product in products_by_id.items():
-            if not product.available or product.stock <= 0:
+            if not product.available:
                 return HttpResponseBadRequest(
                     f'El producto {product.name} no está disponible.'
-                )
-            if quantities_by_id[product_id] > product.stock:
-                return HttpResponseBadRequest(
-                    f'La cantidad solicitada para {product.name} supera '
-                    'las existencias disponibles.'
                 )
 
             form_data = request.POST.copy()
@@ -161,7 +156,7 @@ class OrderCreateView(PermissionsClient, View):
                 'quantity',
                 [str(quantities_by_id[product_id])],
             )
-            form = OrderForm(form_data, max_quantity=product.stock)
+            form = OrderForm(form_data)
             if not form.is_valid():
                 if len(products_by_id) == 1:
                     return render(

@@ -21,6 +21,13 @@
         </p>
 
         {# Campos del pedido #}
+
+            <div id="cliente-card" class="mt-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/40">
+                <p id="cliente-nombre" class="text-base font-bold text-gray-900 dark:text-white">{{ request.user.nombres }} {{ request.user.apellidos }}</p>
+                <p id="cliente-email" class="mt-0.5 break-words text-sm text-gray-600 dark:text-gray-300">{{ request.user.email }}</p>
+                <p id="cliente-telefono" class="text-sm text-gray-600 dark:text-gray-300">{{ request.user.telefono|default:"Sin teléfono registrado" }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">{{ request.user.direccion|default:"Sin direccion" }}</p>
+            </div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200" for="{{ order_form.metodo_pago.id_for_label }}">
@@ -41,7 +48,6 @@
                 {% endfor %}
             </div>
         </div>
-
         {# Total y envío #}
         <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <p class="text-lg font-bold text-gray-900 dark:text-white">

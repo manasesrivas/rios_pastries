@@ -46,7 +46,7 @@ class ProductDetailView(PermissionsClient, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['order_form'] = OrderForm(max_quantity=self.object.stock)
+        context['order_form'] = OrderForm()
         return context
 
 class ProductCreateView(AdminPermission, CreateView):
@@ -71,5 +71,4 @@ class ProductDeleteView(AdminPermission, DeleteView):
     template_name = 'products/confirm_delete.html'
     context_object_name = 'product'
     success_url = reverse_lazy('products:list')
-
 
