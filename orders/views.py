@@ -44,6 +44,14 @@ class AdminPermission(LoginRequiredMixin, PermissionRequiredMixin):
     ]
     raise_exception = True
 
+class OrderDeliverView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'orders.change_order'
+
+    def post(self, request):
+        order = get_object_or_404(Order, pk=request.POST.get('order_id'))
+        order.status = 'ENTREGADO'   # lo fija el servidor, no el formulario
+        order.save(update_fields=['status'])
+        return redirect('orders:detail', pk=order.pk)
 
 class OrderListView(PermissionsClient, ListView):
     model = Order

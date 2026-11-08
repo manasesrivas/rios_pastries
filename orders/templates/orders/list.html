@@ -54,7 +54,12 @@
                             · Entrega: {{ order.get_tipo_entrega_display|default:"No especificado" }}
                         </p>
                     </div>
-                    <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300">${{ order.total|floatformat:"2u" }}</p>
+                    <div class="flex shrink-0 items-center gap-3">
+                        <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300">${{ order.total|floatformat:"2u" }}</p>
+                        <span data-field="status" class="rounded-full px-3 py-1 text-xs font-semibold {% if order.status == 'entregado' %}bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300{% elif order.status == 'cancelado' %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% elif order.status == 'apartado' %}bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
                 </header>
 
                 <footer class="flex flex-wrap justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
@@ -88,7 +93,10 @@
                         <p data-field="product-quantity" class="mt-1 text-sm text-gray-600 dark:text-gray-300"></p>
                         <p data-field="payment-delivery" class="mt-1 text-sm text-gray-600 dark:text-gray-300"></p>
                     </div>
-                    <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300"></p>
+                    <div class="flex shrink-0 items-center gap-3">
+                        <p data-field="total" class="text-lg font-bold text-indigo-700 dark:text-indigo-300"></p>
+                        <span data-field="status" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
+                    </div>
                 </header>
                 <footer class="flex flex-wrap justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
                     <a data-field="detail-link" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">Ver pedido</a>
@@ -105,19 +113,10 @@
 <script>
 
     const orderList = document.getElementById('order-list');
-    // const orderNotification = document.getElementById('order-notification');
-    // const orderNotificationMessage = document.getElementById('order-notification-message');
-    // const orderNotificationLink = document.getElementById('order-notification-link');
-    // const orderDetailUrlTemplate = "{% url 'orders:detail' 0 %}";
-    // const orderUpdateUrlTemplate = "{% url 'orders:update' 0 %}";
-    // const orderCardTemplate = document.getElementById('order-card-template');
     const selectedStatus = "{{ selected_status|default:''|escapejs }}";
 
     socket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
-        // if (data.type !== 'order_updated') {
-        //     return;
-        // }
 
         const orderId = Number(data.order_id);
         if (!Number.isInteger(orderId) || !orderList || !orderCardTemplate) {
@@ -128,43 +127,6 @@
             return;
         }
 
-        // const card = orderCardTemplate.content.firstElementChild.cloneNode(true);
-        // card.dataset.orderId = orderId;
-        // card.querySelector('[data-field="order-number"]').textContent = `Pedido #${orderId}`;
-        // card.querySelector('[data-field="date-time"]').textContent =
-        //     `${data.order_date} · ${data.order_time}`;
-        // card.querySelector('[data-field="customer-name"]').textContent = data.customer_name;
-        // card.querySelector('[data-field="product-quantity"]').textContent =
-        //     `Productos encargados: ${data.product_quantity} unidades`;
-        // card.querySelector('[data-field="payment-delivery"]').textContent =
-        //     `Pago: ${data.payment_method} · Entrega: ${data.delivery_type}`;
-        // card.querySelector('[data-field="total"]').textContent =
-        //     `$${Number(data.total).toLocaleString('en-US', {
-        //         minimumFractionDigits: 2,
-        //         maximumFractionDigits: 2,
-        //     })}`;
-        // card.querySelector('[data-field="detail-link"]').href =
-        //     orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
-        // card.querySelector('[data-field="edit-link"]').href =
-        //     orderUpdateUrlTemplate.replace(/0\/?$/, `${orderId}/`);
-
-        // const currentCard = orderList.querySelector(
-        //     `article[data-order-id="${orderId}"]`,
-        // );
-        // if (currentCard) {
-        //     currentCard.replaceWith(card);
-        // } else {
-        //     orderList.querySelector('[data-empty-orders]')?.remove();
-        //     orderList.prepend(card);
-        // }
-
-        // if (orderNotificationMessage && orderNotificationLink && orderNotification) {
-        //     orderNotificationMessage.textContent =
-        //         `Se agregó ${data.product_name} al pedido #${orderId}.`;
-        //     orderNotificationLink.href = orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
-        //     orderNotification.classList.remove('hidden');
-        //     orderNotification.classList.add('flex');
-        // }
     });
 
     socket.addEventListener('open', () => {

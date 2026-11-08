@@ -80,10 +80,21 @@
             <a class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800" href="{% url 'orders:list' %}">
                 Volver a pedidos
             </a>
-            {% if perms.users.change_order %}
-            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
-                Editar pedido
-            </a>
+            
+            {% if perms.orders.change_order %}
+                {% if order.status != 'ENTREGADO' %}
+                    <form class="px-5 sm:px-7" method="post" action="{% url 'orders:deliver' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="order_id" value="{{ order.pk }}">
+                        <input type="hidden" name="status" value="ENTREGADO">
+                        <button class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="submit">
+                            Pedido entregado
+                        </button>
+                    </form>
+                {% endif %}
+                <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'orders:update' order.pk %}">
+                    Editar pedido
+                </a>
             {% endif %}
         </footer>
     </article>

@@ -323,6 +323,17 @@ class OrderViewsTest(TestCase):
         self.assertContains(response, 'Pago: Tarjeta')
         self.assertContains(response, 'Entrega: Recoger en tienda')
 
+    def test_list_view_muestra_estado_del_pedido_en_la_tarjeta(self):
+        self.order.status = Order.Estado.APARTADO
+        self.order.save(update_fields=['status'])
+        self.client.login(email='admin@test.com', password='admin123')
+
+        response = self.client.get(reverse('orders:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Apartado')
+        self.assertContains(response, 'data-field="status"')
+
     def test_detail_view_con_login(self):
         """Ver el detalle de una orden existente."""
         self.client.login(email='admin@test.com', password='admin123')

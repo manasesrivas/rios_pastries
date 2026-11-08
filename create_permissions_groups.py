@@ -31,6 +31,20 @@ configuracion_permisos = [
         'grupo': 'Administrador',
     },
     {
+        'app': 'orders',
+        'modelo': 'order',
+        'permisos': ['view_order', 'add_order', 'change_order', 'delete_order'],
+        'grupo': 'Administrador',
+    },
+    {
+        'app': 'venues',
+        'modelo': 'venue',
+        'permisos': [
+            'add_venue', 'view_venue', 'change_venue', 'delete_venue',
+        ],
+        'grupo': 'Administrador',
+    },
+    {
         'app': 'products',
         'modelo': 'product',
         'permisos': ['view_product'],
@@ -49,20 +63,6 @@ configuracion_permisos = [
         'modelo': 'order',
         'permisos': ['view_order', 'add_order'],
         'grupo': 'Cliente',
-    },
-    {
-        'app': 'orders',
-        'modelo': 'order',
-        'permisos': ['view_order', 'add_order', 'change_order', 'delete_order'],
-        'grupo': 'Administrador',
-    },
-    {
-        'app': 'venues',
-        'modelo': 'venue',
-        'permisos': [
-            'add_venue', 'view_venue', 'change_venue', 'delete_venue',
-        ],
-        'grupo': 'Administrador',
     },
     {
         'app': 'halls',
