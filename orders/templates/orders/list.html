@@ -100,24 +100,24 @@
         </template>
     </div>
 </section>
-{% if can_receive_order_notifications %}
+
+
 <script>
-    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${socketProtocol}//${window.location.host}/ws/notificaciones/`);
+
     const orderList = document.getElementById('order-list');
-    const orderNotification = document.getElementById('order-notification');
-    const orderNotificationMessage = document.getElementById('order-notification-message');
-    const orderNotificationLink = document.getElementById('order-notification-link');
-    const orderDetailUrlTemplate = "{% url 'orders:detail' 0 %}";
-    const orderUpdateUrlTemplate = "{% url 'orders:update' 0 %}";
-    const orderCardTemplate = document.getElementById('order-card-template');
+    // const orderNotification = document.getElementById('order-notification');
+    // const orderNotificationMessage = document.getElementById('order-notification-message');
+    // const orderNotificationLink = document.getElementById('order-notification-link');
+    // const orderDetailUrlTemplate = "{% url 'orders:detail' 0 %}";
+    // const orderUpdateUrlTemplate = "{% url 'orders:update' 0 %}";
+    // const orderCardTemplate = document.getElementById('order-card-template');
     const selectedStatus = "{{ selected_status|default:''|escapejs }}";
 
     socket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
-        if (data.type !== 'order_updated') {
-            return;
-        }
+        // if (data.type !== 'order_updated') {
+        //     return;
+        // }
 
         const orderId = Number(data.order_id);
         if (!Number.isInteger(orderId) || !orderList || !orderCardTemplate) {
@@ -128,43 +128,43 @@
             return;
         }
 
-        const card = orderCardTemplate.content.firstElementChild.cloneNode(true);
-        card.dataset.orderId = orderId;
-        card.querySelector('[data-field="order-number"]').textContent = `Pedido #${orderId}`;
-        card.querySelector('[data-field="date-time"]').textContent =
-            `${data.order_date} · ${data.order_time}`;
-        card.querySelector('[data-field="customer-name"]').textContent = data.customer_name;
-        card.querySelector('[data-field="product-quantity"]').textContent =
-            `Productos encargados: ${data.product_quantity} unidades`;
-        card.querySelector('[data-field="payment-delivery"]').textContent =
-            `Pago: ${data.payment_method} · Entrega: ${data.delivery_type}`;
-        card.querySelector('[data-field="total"]').textContent =
-            `$${Number(data.total).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
-        card.querySelector('[data-field="detail-link"]').href =
-            orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
-        card.querySelector('[data-field="edit-link"]').href =
-            orderUpdateUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+        // const card = orderCardTemplate.content.firstElementChild.cloneNode(true);
+        // card.dataset.orderId = orderId;
+        // card.querySelector('[data-field="order-number"]').textContent = `Pedido #${orderId}`;
+        // card.querySelector('[data-field="date-time"]').textContent =
+        //     `${data.order_date} · ${data.order_time}`;
+        // card.querySelector('[data-field="customer-name"]').textContent = data.customer_name;
+        // card.querySelector('[data-field="product-quantity"]').textContent =
+        //     `Productos encargados: ${data.product_quantity} unidades`;
+        // card.querySelector('[data-field="payment-delivery"]').textContent =
+        //     `Pago: ${data.payment_method} · Entrega: ${data.delivery_type}`;
+        // card.querySelector('[data-field="total"]').textContent =
+        //     `$${Number(data.total).toLocaleString('en-US', {
+        //         minimumFractionDigits: 2,
+        //         maximumFractionDigits: 2,
+        //     })}`;
+        // card.querySelector('[data-field="detail-link"]').href =
+        //     orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+        // card.querySelector('[data-field="edit-link"]').href =
+        //     orderUpdateUrlTemplate.replace(/0\/?$/, `${orderId}/`);
 
-        const currentCard = orderList.querySelector(
-            `article[data-order-id="${orderId}"]`,
-        );
-        if (currentCard) {
-            currentCard.replaceWith(card);
-        } else {
-            orderList.querySelector('[data-empty-orders]')?.remove();
-            orderList.prepend(card);
-        }
+        // const currentCard = orderList.querySelector(
+        //     `article[data-order-id="${orderId}"]`,
+        // );
+        // if (currentCard) {
+        //     currentCard.replaceWith(card);
+        // } else {
+        //     orderList.querySelector('[data-empty-orders]')?.remove();
+        //     orderList.prepend(card);
+        // }
 
-        if (orderNotificationMessage && orderNotificationLink && orderNotification) {
-            orderNotificationMessage.textContent =
-                `Se agregó ${data.product_name} al pedido #${orderId}.`;
-            orderNotificationLink.href = orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
-            orderNotification.classList.remove('hidden');
-            orderNotification.classList.add('flex');
-        }
+        // if (orderNotificationMessage && orderNotificationLink && orderNotification) {
+        //     orderNotificationMessage.textContent =
+        //         `Se agregó ${data.product_name} al pedido #${orderId}.`;
+        //     orderNotificationLink.href = orderDetailUrlTemplate.replace(/0\/?$/, `${orderId}/`);
+        //     orderNotification.classList.remove('hidden');
+        //     orderNotification.classList.add('flex');
+        // }
     });
 
     socket.addEventListener('open', () => {
@@ -183,5 +183,4 @@
         console.error('Error en la conexión de notificaciones de pedidos:', event);
     });
 </script>
-{% endif %}
 {% endblock %}

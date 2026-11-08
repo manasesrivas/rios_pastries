@@ -58,11 +58,13 @@
                             class="min-h-11 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-600">
                         Vaciar carrito
                     </button>
+                    {% if is_store_open %}
                     <a href="{% url 'orders:checkout' %}"
                     data-cart-checkout
                     class="inline-flex min-h-11 items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-green-600">
                         Realizar pedido
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

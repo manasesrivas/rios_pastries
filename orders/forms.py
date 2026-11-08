@@ -4,22 +4,6 @@ from .models import Order
 
 
 class OrderForm(forms.Form):
-    reservation = forms.ModelChoiceField(
-        label='Reservación',
-        queryset=Reservation.objects.none(),
-        empty_label='Selecciona una reservación',
-        widget=forms.Select(
-            attrs={
-                'class': (
-                    'min-h-11 w-full rounded-lg border border-gray-300 '
-                    'bg-white px-3 py-2 text-sm text-gray-900 shadow-sm '
-                    'outline-none focus:border-indigo-500 focus:ring-2 '
-                    'focus:ring-indigo-500/20 dark:border-gray-600 '
-                    'dark:bg-gray-800 dark:text-white'
-                ),
-            }
-        ),
-    )
     quantity = forms.IntegerField(
         label='Cantidad',
         min_value=1,
@@ -75,14 +59,3 @@ class OrderForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, max_quantity=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['reservation'].queryset = Reservation.objects.filter(
-            estado=EstadoReservacion.CONFIRMADA
-        )
-        '''
-        Descomentar cuando se use para los items de reservacion
-        '''
-        # if max_quantity is not None:
-        #     self.fields['quantity'].max_value = max_quantity
-        #     self.fields['quantity'].widget.attrs['max'] = max_quantity

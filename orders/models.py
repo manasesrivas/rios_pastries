@@ -1,6 +1,9 @@
 from django.db import models
 from users.models import User
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from .utils import is_store_open
 
 class Order(models.Model):
     class Estado(models.TextChoices):
@@ -67,3 +70,11 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Pedido #{self.pk} - {self.user}"
+
+    def clean(self):
+        super().clean()
+        # Solo aplica para pedidos nuevos que no estén ligados a una reservación previa
+        if not self.pk and not self.reservation and not is_store_open():
+            raise ValidationError(
+                "El horario para realizar pedidos en línea es de 9:00 a. m. a 7:00 p. m."
+            )

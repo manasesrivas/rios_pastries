@@ -2,5 +2,5 @@ from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'^ws/notificaciones/?$', consumers.NoticationsConsumer.as_asgi()),
+    re_path(r'^ws/notificaciones/?$', consumers.NotificationsConsumer.as_asgi()),
 ]

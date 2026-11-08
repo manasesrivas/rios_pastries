@@ -41,6 +41,26 @@
         {% block title %}
         {% endblock %}
     </title>
+    <script>
+    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${socketProtocol}//${window.location.host}/ws/notificaciones/`);
+    
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+    
+        // 1. Verificar que el evento corresponda a una orden creada
+        // y que pertenezca al usuario actual (o venga de su canal privado)
+        if (data.status === 'pendiente' && data.order_id) {
+            
+            // 2. Limpiar el carrito del localStorage
+            localStorage.removeItem('cart');
+    
+    
+            // 4. Opcional: Redirigir o mostrar notificación en pantalla
+            console.log(`Orden #${data.order_id} procesada exitosamente.`);
+        }
+    };
+</script>
 </head>
 <body class="bg-gray-100 text-gray-900 flex flex-col min-h-screen dark:bg-gray-950 dark:text-white">
     {% if messages %}
@@ -50,23 +70,38 @@
             <div class="mx-auto w-full max-w-6xl space-y-3">
 
                 {% for message in messages %}
-                    <div role="alert"
-                        class="pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg bg-slate-950
-                        {% if message.tags == 'success' %}
-                            border-green-500 text-green-400
-                        {% elif message.tags == 'error' %}
-                            border-red-500 text-red-400
-                        {% elif message.tags == 'warning' %}
-                            border-yellow-500 text-yellow-400
-                        {% else %}
-                            border-indigo-500 text-indigo-400
-                        {% endif %}">
-
-                        <p class="min-w-0 break-words">
-                            {{ message }}
-                        </p>
-
-                    </div>
+                    {% if message.message == 'ORDER_CREATED_SUCCESS' and request.user|has_group:"Cliente" %}
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Borrar el carrito del almacenamiento local de forma garantizada
+                                localStorage.removeItem('cart');
+                                
+                                if (typeof updateCartUI === 'function') {
+                                    updateCartUI();
+                                }
+                            });
+                        </script>
+                    {% else %}
+                        <div role="alert"
+                            class="pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg bg-slate-950
+                            {% if message.tags == 'success' %}
+                                border-green-500 text-green-400
+                            {% elif message.tags == 'error' %}
+                                border-red-500 text-red-400
+                            {% elif message.tags == 'warning' %}
+                                border-yellow-500 text-yellow-400
+                            {% else %}
+                                border-indigo-500 text-indigo-400
+                            {% endif %}">
+        
+                            <p class="min-w-0 break-words">
+                                {{ message }}
+                            </p>
+        
+                        </div>
+                            
+                    {% endif %}
+                    
                 {% endfor %}
 
             </div>
@@ -84,6 +119,17 @@
             </a>
 
             <div class="flex max-w-xs items-center gap-3 px-4 py-3 sm:max-w-sm">
+                {% if is_store_open %}
+                    <span class="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold tracking-wide text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300">
+                        <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                        ABIERTO
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold tracking-wide text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                        <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                        CERRADO
+                    </span>
+                {% endif %}
                 <button id="theme-toggle" type="button" class="rounded-full p-2 transition hover:bg-gray-200 hover:cursor-pointer dark:hover:bg-gray-800" aria-label="Cambiar tema">
                     <img src="{% static 'assets/moon.svg' %}" alt="" class="hidden w-6" id="icon-moon">
                     <img src="{% static 'assets/sun.svg' %}" alt="" class="w-6" id="icon-sun">

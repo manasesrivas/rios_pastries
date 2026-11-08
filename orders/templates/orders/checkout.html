@@ -54,10 +54,19 @@
                 Total: <span id="checkout-total" class="text-indigo-700 dark:text-indigo-300">$0.00</span>
             </p>
         </div>
-        <button id="checkout-submit" type="submit" disabled
-                class="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">
-            Realizar pedido
-        </button>
+        {% if is_store_open %}
+            <button id="checkout-submit" type="submit" disabled
+                    class="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">
+                Realizar pedido
+            </button>
+
+        {% else %}
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-center dark:border-amber-900 dark:bg-amber-950/40">
+                <p class="text-sm font-normal leading-relaxed text-amber-700 dark:text-amber-300">
+                    Pedidos deshabilitados fuera de horario (9:00 AM - 7:00 PM)
+                </p>
+            </div>
+        {% endif %}
     </form>
 </section>
 
