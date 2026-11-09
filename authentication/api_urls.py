@@ -3,11 +3,11 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .api_view import LogoutView
+from .api_view import *
 
 urlpatterns = [
     # Login: recibe username/password y devuelve tokens (access y refresh)
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     
     # Refresh: recibe el refresh token y devuelve un nuevo access token
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

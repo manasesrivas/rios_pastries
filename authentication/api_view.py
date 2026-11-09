@@ -4,6 +4,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+from users.serializers import CustomTokenObtainPairSerializer
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -16,3 +19,9 @@ class LogoutView(APIView):
             return Response({"detail": "Sesión cerrada correctamente."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({"error": "Token inválido o no proporcionado."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
