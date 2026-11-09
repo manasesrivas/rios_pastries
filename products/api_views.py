@@ -23,6 +23,11 @@ class ProductListAPIView(ListCreateAPIView):
         search = self.request.query_params.get('search', '').strip()
         category_id = self.request.query_params.get('category_id', '').strip()
 
+        # if self.request.user.has_perm('products.change_product'):
+        queryset = Product.all_objects.select_related('category')
+        # else:
+            # queryset = Product.objects.all()
+
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search) |
@@ -31,7 +36,6 @@ class ProductListAPIView(ListCreateAPIView):
 
         if category_id:
             queryset = queryset.filter(category_id=category_id)
-
         return queryset
 
 
@@ -39,6 +43,11 @@ class ProductDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.select_related('category')
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
+
+    def get_qeuryset(self):
+        return Product.objects.select_related('category').filter(
+            status=Product.StatusProduct.ACTIVO
+        )
 
     def perform_destroy(self, instance):
         instance.status = Product.StatusProduct.ELIMINADO
