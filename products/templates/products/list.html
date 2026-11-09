@@ -51,9 +51,12 @@
                 <div class="flex flex-1 flex-col p-4">
                     <div class="flex items-start justify-between gap-3">
                         <h2 class="line-clamp-2 text-lg font-semibold leading-6 text-gray-900 dark:text-white">{{ product.name }}</h2>
-                        <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold {% if not product.available %}bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300{% endif %}">
+                        {% if not product.available or product.status == 'eliminado' %}
+                        <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
                             {% if not product.available %}Agotado{% endif %}
+                            {% if product.status == 'eliminado' %}Eliminado{% endif %}
                         </span>
+                        {% endif %}
                     </div>
 
                     <p class="mt-2 text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ product.category.name }}</p>

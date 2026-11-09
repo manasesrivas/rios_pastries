@@ -34,8 +34,8 @@ class Product(models.Model):
         default=StatusProduct.ACTIVO,
     )
 
-    objects = models.Manager()
-    active_objects = ActiveProductManager()
+    all_objects = models.Manager()
+    objects = ActiveProductManager()
 
     def __str__(self):
         return self.name
