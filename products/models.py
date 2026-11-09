@@ -9,7 +9,6 @@ class StatusProduct(models.TextChoices):
 class ActiveProductManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-            available=True,
             status=StatusProduct.ACTIVO,
             category__status=Category.Status.ACTIVO
         ).order_by('id')

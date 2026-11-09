@@ -29,11 +29,12 @@ class ProductListView(PermissionsClient, ListView):
     ordering = ['name']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         search = self.request.GET.get('search', '')
+
         if self.request.user.has_perm('products.change_product'):
-            return Product.all_objects.order_by('id')
-            
+            queryset = Product.all_objects.select_related('category')
+        else:
+            queryset = Product.objects.all()
 
         if search:
             queryset = queryset.filter(
@@ -41,7 +42,7 @@ class ProductListView(PermissionsClient, ListView):
                 Q(category__name__icontains=search)
             )
 
-        return queryset
+        return queryset.order_by('name')
 
 class ProductDetailView(PermissionsClient, DetailView):
     model = Product
