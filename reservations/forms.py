@@ -21,15 +21,17 @@ class ReservationCreateForm(forms.ModelForm):
 
     class Meta:
         model = Reservation
-        fields = ['fecha_evento', 'cantidad_personas', 'estado']
-
+        fields = ['sala', 'fecha_evento', 'cantidad_personas', 'estado']
+ 
         labels = {
+            'sala': 'Sala',
             'fecha_evento': 'Fecha del evento',
             'cantidad_personas': 'Cantidad de personas',
             'estado': 'Estado',
         }
-
+ 
         widgets = {
+            'sala': forms.RadioSelect(),
             'fecha_evento': forms.DateInput(
                 format='%Y-%m-%d',
                 attrs={'class': INPUT_CLASSES, 'type': 'date'},
@@ -42,9 +44,34 @@ class ReservationCreateForm(forms.ModelForm):
             'estado': forms.Select(attrs={'class': INPUT_CLASSES}),
         }
 
-    def __init__(self, *args, sala=None, **kwargs):
+    @staticmethod
+    def cliente_disponibles():
+        return User.objects.filter(
+            estado=User.Estado.ACTIVO,
+            groups__name="Cliente"
+        )
+    
+ 
+    def __init__(self, *args, sala=None, cliente=None, can_manage=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.sala = sala  # el UpdateView no la pasa, entonces queda en None
+        self.sala = sala
+        self.can_manage = can_manage
+        self.cliente = cliente
+        self.clientes = None
+
+        if can_manage:
+            self.clientes = self.cliente_disponibles().order_by('nombres', 'apellidos')
+            self.fields['cliente_email'] = forms.CharField(
+                label='Cliente',
+                widget=forms.TextInput(attrs={
+                    'class': INPUT_CLASSES,
+                    'list': 'clientes-list',
+                    'placeholder': 'Busca por nombre o correo…',
+                    'autocomplete': 'off',
+                }),
+            )
+            if self.cliente is not None:
+                self.fields['cliente_email'].initial = self.cliente.email
 
         if self.instance.pk:
             # Eliminar se hace desde la vista de borrado, no desde aquí.
@@ -54,7 +81,7 @@ class ReservationCreateForm(forms.ModelForm):
             ]
         else:
             del self.fields['estado']
-
+ 
     def clean_fecha_evento(self):
         fecha = self.cleaned_data['fecha_evento']
         if 'fecha_evento' in self.changed_data and fecha < date.today():
@@ -63,25 +90,53 @@ class ReservationCreateForm(forms.ModelForm):
             )
         return fecha
 
+    def clean_cliente_email(self):
+        valor = self.cleaned_data['cliente_email'].strip()
+        cliente = self.cliente_disponibles().filter(
+            email__iexact=valor
+        ).first()
+        if cliente is None: raise forms.ValidationError('Selecciona un cliente')
+        self.cliente = cliente
+        return valor
+
     def clean(self):
         cleaned_data = super().clean()
+ 
+        # Al crear, el estado no está en el formulario y Django omite la
+        # restricción condicional del modelo, así que se valida aquí.
+        if not self.instance.pk:
+            sala = cleaned_data.get('sala')
+            fecha = cleaned_data.get('fecha_evento')
+            if sala and fecha:
+                ocupada = Reservation.objects.filter(
+                    sala=sala, fecha_evento=fecha
+                ).exclude(estado__in=[
+                    EstadoReservacion.CANCELADA,
+                    EstadoReservacion.ELIMINADA,
+                ])
+                if ocupada.exists():
+                    raise forms.ValidationError(
+                        'Esta sala ya tiene una reservación activa '
+                        'para esa fecha.'
+                    )
+                
+        sala = cleaned_data.get('sala') or getattr(self, 'sala', None)
+        personas = cleaned_data.get('cantidad_personas')
 
-        sala = self.sala or (self.instance.sala if self.instance.sala_id else None)
-        fecha = cleaned_data.get('fecha_evento')
-        estado = cleaned_data.get('estado') or self.instance.estado
-        inactivas = [EstadoReservacion.CANCELADA, EstadoReservacion.ELIMINADA]
-
-        if sala and fecha and estado not in inactivas:
-            ocupada = Reservation.objects.filter(
-                sala=sala, fecha_evento=fecha
-            ).exclude(estado__in=inactivas)
-            if self.instance.pk:
-                ocupada = ocupada.exclude(pk=self.instance.pk)
-            if ocupada.exists():
-                raise forms.ValidationError(
-                    'Esta sala ya tiene una reservación activa para esa fecha.'
-                )
+        if sala and personas and personas > sala.capacity:
+            self.add_error(
+                'cantidad_personas',
+                f'La sala "{sala.name}" tiene capacidad para {sala.capacity} personas.',
+            )
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.can_manage and self.cliente is not None:
+            instance.cliente = self.cliente
+        if commit:
+            instance.save()
+        return instance
 
 
 class ReservationUpdateForm(forms.ModelForm):
@@ -191,6 +246,15 @@ class ReservationUpdateForm(forms.ModelForm):
                         'Esta sala ya tiene una reservación activa '
                         'para esa fecha.'
                     )
+                
+        sala = cleaned_data.get('sala') or getattr(self, 'sala', None)
+        personas = cleaned_data.get('cantidad_personas')
+
+        if sala and personas and personas > sala.capacity:
+            self.add_error(
+                'cantidad_personas',
+                f'La sala "{sala.name}" tiene capacidad para {sala.capacity} personas.',
+            )
         return cleaned_data
 
     def save(self, commit=True):

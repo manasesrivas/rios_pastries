@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'venues',
     'halls',
     'reservations',
+    'products_reservations',
     # ===== django-tailwind =======
     'tailwind',
     'theme',

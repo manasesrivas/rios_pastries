@@ -9,6 +9,11 @@
             <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Reservaciones</h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Consulta y filtra las reservaciones por estado.</p>
         </div>
+        {% if perms.reservations.add_reservation %}
+            <a class="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" href="{% url 'reservations:create' %}">
+                Nueva reservación
+            </a>
+        {% endif %}
     </header>
 
     <nav class="mb-6 flex gap-2 overflow-x-auto pb-2" aria-label="Filtrar reservaciones por estado">

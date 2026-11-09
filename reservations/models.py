@@ -50,3 +50,7 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f'Reservación #{self.pk} - {self.sala} ({self.fecha_evento})'
+        
+    @property
+    def total_productos(self):
+        return sum(item.subtotal for item in self.items.all())

@@ -48,6 +48,39 @@
             </div>
         </dl>
 
+        <div class="border-t border-gray-200 px-6 py-6 dark:border-gray-700 sm:px-8">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Productos de la reservación</h2>
+
+            <div class="mt-4 space-y-3">
+                {% for item in reservation.items.all %}
+                    <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0">
+                            <h3 class="break-words font-semibold text-gray-900 dark:text-white">{{ item.product.name }}</h3>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                Cantidad: {{ item.cantidad }}
+                                <span class="mx-1" aria-hidden="true">·</span>
+                                Precio unitario: ${{ item.precio_unitario|floatformat:2 }}
+                            </p>
+                        </div>
+                        <p class="text-base font-bold text-indigo-700 dark:text-indigo-300">
+                            ${{ item.subtotal|floatformat:2 }}
+                        </p>
+                    </article>
+                {% empty %}
+                    <p class="rounded-xl border border-dashed border-gray-300 px-5 py-8 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                        Esta reservación no tiene productos.
+                    </p>
+                {% endfor %}
+            </div>
+
+            {% if reservation.items.all %}
+                <div class="mt-4 flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3 dark:bg-indigo-950">
+                    <span class="text-sm font-medium text-indigo-700 dark:text-indigo-300">Total de productos</span>
+                    <span class="text-xl font-bold text-indigo-800 dark:text-indigo-200">${{ reservation.total_productos|floatformat:2 }}</span>
+                </div>
+            {% endif %}
+        </div>
+
         {% if reservation.estado != 'ELIMINADA' %}
             {% if perms.reservations.change_reservation or perms.reservations.delete_reservation %}
                 <div class="flex flex-wrap gap-3 border-t border-gray-200 px-6 py-5 dark:border-gray-700 sm:px-8" aria-label="Acciones de la reservación">

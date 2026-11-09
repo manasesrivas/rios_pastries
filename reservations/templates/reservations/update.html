@@ -51,6 +51,88 @@
                             <p id="cliente-telefono" class="text-sm text-gray-600 dark:text-gray-300">{{ form.cliente.telefono|default:"Sin teléfono registrado" }}</p>
                         </div>
                     </div>
+
+                    {{ formset.management_form }}
+
+                    <fieldset>
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                            Productos para el evento
+                        </legend>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Elige los productos y la cantidad. Deja la fila vacía si no quieres agregar ninguno.
+                        </p>
+
+                        {% if formset.non_form_errors %}
+                            <div class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
+                                {{ formset.non_form_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mt-4 space-y-4">
+                            {% for item_form in formset %}
+                                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                                    {{ item_form.id }}
+
+                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_9rem]">
+                                        <div>
+                                            <label for="{{ item_form.product.id_for_label }}" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                Producto
+                                            </label>
+                                            {{ item_form.product }}
+                                            {% for error in item_form.product.errors %}
+                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+
+                                        <div>
+                                            <label for="{{ item_form.cantidad.id_for_label }}" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                                Cantidad
+                                            </label>
+                                            {{ item_form.cantidad }}
+                                            {% for error in item_form.cantidad.errors %}
+                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    {% if item_form.instance.pk %}
+                                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
+
+                                            <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                                <p class="text-gray-600 dark:text-gray-300">
+                                                    Precio unitario:
+                                                    <strong class="font-semibold text-gray-900 dark:text-white">
+                                                        ${{ item_form.instance.precio_unitario|floatformat:2 }}
+                                                    </strong>
+                                                </p>
+
+                                                <p class="text-gray-600 dark:text-gray-300">
+                                                    Subtotal:
+                                                    <strong class="font-semibold text-indigo-700 dark:text-indigo-300">
+                                                        ${{ item_form.instance.subtotal|floatformat:2 }}
+                                                    </strong>
+                                                </p>
+                                            </div>
+
+                                            {% if formset.can_delete %}
+                                                <label for="{{ item_form.DELETE.id_for_label }}"
+                                                    class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-within:ring-2 focus-within:ring-red-500 dark:border-red-900 dark:bg-gray-900 dark:text-red-300 dark:hover:bg-red-950/50">
+
+                                                    <input type="checkbox"
+                                                        name="{{ item_form.DELETE.html_name }}"
+                                                        id="{{ item_form.DELETE.id_for_label }}"
+                                                        class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-red-500">
+
+                                                    Quitar producto
+                                                </label>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
+                   
                     <script>
                         (function () {
                             var input = document.getElementById('{{ form.cliente_email.id_for_label }}');
@@ -94,7 +176,7 @@
                         {% for radio in form.sala %}
                             {% with hall=radio.data.value.instance %}
                                 <label for="{{ radio.id_for_label }}" class="relative block cursor-pointer">
-                                    <input type="radio" id="{{ radio.id_for_label }}" name="{{ radio.data.name }}" value="{{ radio.data.value }}" class="peer sr-only" {% if radio.data.selected %}checked{% endif %} required>
+                                    <input data-capacity="{{ hall.capacity }}" type="radio" id="{{ radio.id_for_label }}" name="{{ radio.data.name }}" value="{{ radio.data.value }}" class="peer sr-only" {% if radio.data.selected %}checked{% endif %} required>
 
                                     <span class="block h-full rounded-xl border border-gray-300 bg-white p-4 shadow-sm transition hover:border-indigo-400 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-2 peer-checked:ring-indigo-500 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-indigo-400 dark:peer-checked:border-indigo-400 dark:peer-checked:bg-indigo-950">
 
@@ -184,6 +266,23 @@
                 </div>
             </form>
         </div>
-    </div>
+    </div> 
+    <script>
+        (function () {
+            var input = document.getElementById('{{ form.cantidad_personas.id_for_label }}');
+            var radios = document.querySelectorAll('input[name="{{ form.sala.html_name }}"]');
+            if (!input || !radios.length) return;
+
+            function ajustarMax() {
+                var elegida = document.querySelector('input[name="{{ form.sala.html_name }}"]:checked');
+                if (!elegida || !elegida.dataset.capacity) return;
+                input.max = elegida.dataset.capacity;
+                input.placeholder = 'Máx. ' + elegida.dataset.capacity;
+            }
+
+            radios.forEach(function (r) { r.addEventListener('change', ajustarMax); });
+            ajustarMax();   // al cargar, con la sala ya seleccionada
+        })();
+    </script>
 </section>
 {% endblock %}
