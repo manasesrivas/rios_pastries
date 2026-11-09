@@ -1,4 +1,3 @@
-python3 manage.py tailwind install
 python3 manage.py tailwind build
 python3 manage.py collectstatic --noinput
 python3 manage.py migrate
