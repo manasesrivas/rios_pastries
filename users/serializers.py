@@ -7,14 +7,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         first_group = self.user.groups.first()
 
-        # Agrega los datos del usuario a la respuesta JSON
         data['user'] = {
             'id': self.user.id,
             'email': self.user.email,
             'nombres': getattr(self.user, 'nombres', ''),
             'apellidos': getattr(self.user, 'apellidos', ''),
             'grupo': first_group.name if first_group else ''
-            # Agrega cualquier otro campo que necesites de tu modelo User
         }
 
         return data
