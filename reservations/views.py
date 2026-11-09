@@ -22,6 +22,8 @@ from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, transaction
 from products_reservations.forms import ReservationItemFormSet
 
+from .services import enviar_comprobante_email
+
 def can_manage_reservations(user):
     """Superusuario, staff, Administrador o Cajero ven y gestionan todo."""
     return (
@@ -155,6 +157,8 @@ class ReservationCreateView(PermissionsClient, CreateView):
                         cantidad=quantity,
                         precio_unitario=product.price,
                     )
+                transaction.on_commit(lambda: enviar_comprobante_email(self.object))
+
         except IntegrityError:
             # Respaldo: dos personas guardando a la vez
             form.add_error(None, 'Esta sala ya tiene una reservación activa para esa fecha.')

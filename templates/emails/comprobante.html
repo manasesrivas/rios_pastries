@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; margin: 0; padding: 20px; line-height: 1.5; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; }
+    .header h2 { margin: 0 0 5px 0; color: #1e293b; }
+    .info-section { margin-bottom: 20px; }
+    .info-section h3 { border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; color: #2563eb; margin-bottom: 10px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .table th, .table td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+    .table th { background-color: #f8fafc; font-weight: bold; }
+    .text-right { text-align: right; }
+    .total-box { background-color: #f1f5f9; padding: 15px; border-radius: 6px; margin-top: 20px; text-align: right; }
+    .total-box p { margin: 5px 0; }
+    .total-grand { font-size: 1.2em; color: #0f172a; font-weight: bold; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; background-color: #e2e8f0; font-weight: bold; }
+    .footer-note { margin-top: 30px; font-size: 0.85em; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado -->
+  <div class="header">
+    <h2>Comprobante de Reservación #{{ reserva.pk }}</h2>
+    <p><strong>Estado:</strong> <span class="badge">{{ reserva.get_estado_display }}</span></p>
+  </div>
+
+  <!-- Datos del Cliente -->
+  <div class="info-section">
+    <h3>Datos del Cliente</h3>
+    <p>
+      <strong>Nombre:</strong> {{ reserva.cliente.get_full_name|default:reserva.cliente.apellidos }}<br>
+      <strong>Correo electrónico:</strong> {{ reserva.cliente.email }}
+    </p>
+  </div>
+
+  <!-- Detalle de la Reservación y Local -->
+  <div class="info-section">
+    <h3>Detalles del Evento y Ubicación</h3>
+    <p>
+      <strong>Local / Establecimiento:</strong> {{ reserva.sala.venue.name }}<br>
+      <strong>Sala asignada:</strong> {{ reserva.sala.name }}<br>
+      <strong>Fecha del evento:</strong> {{ reserva.fecha_evento|date:"d/m/Y" }}<br>
+      <strong>Cantidad de personas:</strong> {{ reserva.cantidad_personas }}<br>
+      {% if reserva.hora_evento %}
+      <strong>Hora:</strong> {{ reserva.hora_evento|time:"H:i" }}<br>
+      {% endif %}
+      <strong>Costo de la sala:</strong> ${{ reserva.sala.price }}
+    </p>
+  </div>
+
+  <!-- Pedidos / Productos Adicionales -->
+  {% if reserva.items.all %}
+  <div class="info-section">
+    <h3>Productos y Pedidos Adicionales</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="text-right">Cantidad</th>
+          <th class="text-right">Precio Unitario</th>
+          <th class="text-right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in reserva.items.all %}
+        <tr>
+          <td>{{ item.product.name }}</td>
+          <td class="text-right">{{ item.cantidad }}</td>
+          <td class="text-right">${{ item.precio_unitario }}</td>
+          <td class="text-right">${{ item.subtotal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Resumen Financiero -->
+  <div class="total-box">
+    <p>Subtotal Sala: <strong>${{ reserva.sala.price }}</strong></p>
+    {% if reserva.items.all %}
+    <p>Subtotal Productos: <strong>${{ reserva.total_productos }}</strong></p>
+    {% endif %}
+    <p class="total-grand">Total General: ${{ reserva.sala.price|add:reserva.total_productos }}</p>
+    <p><strong>Método de Pago:</strong> {{ reserva.metodo_pago|default:"Pago en establecimiento / Por definir" }}</p>
+  </div>
+
+  <!-- Pie de página de referencia -->
+  <div class="footer-note">
+    <p>Este comprobante sirve como referencia de la operación realizada dentro del sistema.</p>
+    <p>Puedes consultar el detalle actualizado de esta reservación en cualquier momento desde tu cuenta.</p>
+  </div>
+
+</body>
+</html>
