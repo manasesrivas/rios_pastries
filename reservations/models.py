@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import Q
 from halls.models import Hall
 from users.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 class EstadoReservacion(models.TextChoices):
@@ -50,7 +52,23 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f'Reservación #{self.pk} - {self.sala} ({self.fecha_evento})'
-        
+    def clean(self):
+        super().clean()
+        if self.fecha_evento is None:
+            return
+
+        if self.fecha_evento < timezone.localdate():
+            fecha_original = None
+            if self.pk:
+                fecha_original = (
+                    Reservation.objects.filter(pk=self.pk)
+                    .values_list('fecha_evento', flat=True)
+                    .first()
+                )
+            # Solo bloquea si la fecha es nueva o la están cambiando a una pasada
+            if fecha_original != self.fecha_evento:
+                raise ValidationError({'fecha_evento': 'No puedes elegir una fecha pasada.'})
+
     @property
     def total_productos(self):
         return sum(item.subtotal for item in self.items.all())
