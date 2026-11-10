@@ -24,6 +24,36 @@ autenticación. Para modificar productos, inicia sesión y usa la ruta
   `change_product`).
 - `DELETE /api/products/<id>/` elimina un producto (requiere `delete_product`).
 
+## API de órdenes
+
+Las rutas de órdenes requieren enviar el token JWT en el encabezado
+`Authorization: Bearer <token>` y los permisos `view_order` o `add_order`.
+
+- `POST /api/orders/validate/` valida la disponibilidad del carrito, sin
+  guardar cambios.
+- `GET /api/orders/` lista las órdenes del usuario autenticado.
+- `POST /api/orders/` valida nuevamente el carrito y crea el pedido y sus
+  detalles en una transacción. Envía `metodo_pago`, `tipo_entrega`,
+  opcionalmente `direccion`, y una lista `items` con `product_id` y `quantity`.
+  El servidor obtiene los precios de la base de datos.
+- Puedes enviar `Idempotency-Key` en la cabecera para que un reintento idéntico
+  no cree otra orden.
+
+Ambos endpoints POST responden `409 Conflict` con el código
+`CART_UNAVAILABLE_PRODUCTS` y la lista de productos inválidos si alguno no
+existe, fue eliminado o no está disponible.
+
+Ejemplo de cuerpo:
+```json
+{
+  "metodo_pago": "efectivo",
+  "tipo_entrega": "recoger",
+  "items": [
+    {"product_id": 1, "quantity": 2}
+  ]
+}
+```
+
 ## agregar un modulo al proyecto
 `djando` trabaja mediante apps, para crear una app necesita escribir el siguiente codigo en la terminal:
 ```bash

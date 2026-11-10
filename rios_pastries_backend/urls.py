@@ -33,5 +33,6 @@ urlpatterns = [
     ################## API URLS ###################
     path('api/authentication/', include('authentication.api_urls')),
     path('api/products/', include('products.api_urls')),
+    path('api/orders/', include('orders.api_urls')),
     path('api/users/', include('users.api_urls')),
 ]
