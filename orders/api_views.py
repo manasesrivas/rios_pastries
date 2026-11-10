@@ -38,8 +38,15 @@ class OrderListCreateAPIView(ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+        try: 
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            return Response(
+                {
+                    'message': 'El horario para realizar pedidos en línea es de 9:00 a. m. a 7:00 p. m.'
+                },
+                status=status.HTTP_409_CONFLICT
+            )
         idempotency_key = request.headers.get('Idempotency-Key', '').strip()
         if len(idempotency_key) > 255:
             raise ValidationError({
@@ -57,6 +64,14 @@ class OrderListCreateAPIView(ListCreateAPIView):
                 order_data=order_data,
                 items=serializer.validated_data['items'],
                 idempotency_key=idempotency_key or None,
+            )
+        except ValidationError as e:
+            return Response(
+                {
+                    'message': 'error xd',
+                    'errors': 'errors'
+                },
+                status=status.HTTP_400_CONFLICT,
             )
         except UnavailableProductsError as error:
             return Response(
@@ -96,7 +111,15 @@ class ValidateCartAPIView(APIView):
 
     def post(self, request):
         serializer = OrderItemsInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try: 
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            return Response(
+                {
+                    'message': 'El horario para realizar pedidos en línea es de 9:00 a. m. a 7:00 p. m.'
+                },
+                status=status.HTTP_409_CONFLICT
+            )
 
         _, errors = validate_products_availability(
             serializer.validated_data['items'],
