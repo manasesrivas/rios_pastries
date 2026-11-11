@@ -130,6 +130,13 @@ class OrderListView(PermissionsClient, ListView):
         ):
             # Si es Cliente (o cualquier otro usuario), solo ve sus propios pedidos
             queryset = queryset.filter(user=user)
+
+        # Filtro por estado si se recibe el parámetro ?status=
+        selected_status = self.request.GET.get('status', '').strip()
+        valid_statuses = {value for value, _ in Order.Estado.choices}
+        if selected_status in valid_statuses:
+            queryset = queryset.filter(status=selected_status)
+
         return queryset.annotate(product_quantity=Sum('order__quantity'))
 
     def get_context_data(self, **kwargs):
@@ -140,6 +147,10 @@ class OrderListView(PermissionsClient, ListView):
             or user.is_staff
             or user.groups.filter(name__in=['Administrador', 'Cajero']).exists()
         )
+        context['status_choices'] = Order.Estado.choices
+        selected_status = self.request.GET.get('status', '').strip()
+        valid_statuses = {value for value, _ in Order.Estado.choices}
+        context['selected_status'] = selected_status if selected_status in valid_statuses else ''
         return context
 
 
