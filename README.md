@@ -54,6 +54,14 @@ Ejemplo de cuerpo:
 }
 ```
 
+## API de reservaciones
+
+`GET /api/reservations/` requiere autenticación JWT y el permiso
+`view_reservation`. Los usuarios consultan sus reservaciones; Administrador y
+Cajero pueden consultar todas. Las reservaciones eliminadas no aparecen en el
+listado. La respuesta incluye el ID de `sala`, el nombre de la sala y los datos
+del local asociado; `hall` y `venue` se devuelven como `null`.
+
 ## agregar un modulo al proyecto
 `djando` trabaja mediante apps, para crear una app necesita escribir el siguiente codigo en la terminal:
 ```bash

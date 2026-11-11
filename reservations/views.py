@@ -13,6 +13,7 @@ from django.views.generic import (
 
 from .forms import ReservationCreateForm, ReservationUpdateForm
 from .models import EstadoReservacion, Reservation
+from .permissions import can_manage_reservations
 
 from products.models import Product
 from products_reservations.models import ReservationItem
@@ -23,14 +24,6 @@ from django.db import IntegrityError, transaction
 from products_reservations.forms import ReservationItemFormSet
 
 from .services import enviar_comprobante_email
-
-def can_manage_reservations(user):
-    """Superusuario, staff, Administrador o Cajero ven y gestionan todo."""
-    return (
-        user.is_superuser
-        or user.is_staff
-        or user.groups.filter(name__in=['Administrador', 'Cajero']).exists()
-    )
 
 
 class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
