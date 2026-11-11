@@ -1,4 +1,5 @@
 from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.views.generic import (
     ListView,
     DetailView,
@@ -12,6 +13,7 @@ from .models import Product
 from .forms import ProductForm
 
 from django.db.models import Q
+from .models import StatusProduct
 
 class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
     permission_required = 'products.view_product'
@@ -27,9 +29,12 @@ class ProductListView(PermissionsClient, ListView):
     ordering = ['name']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
         search = self.request.GET.get('search', '')
+
+        if self.request.user.has_perm('products.change_product'):
+            queryset = Product.all_objects.select_related('category')
+        else:
+            queryset = Product.objects.all()
 
         if search:
             queryset = queryset.filter(
@@ -37,7 +42,7 @@ class ProductListView(PermissionsClient, ListView):
                 Q(category__name__icontains=search)
             )
 
-        return queryset
+        return queryset.order_by('name')
 
 class ProductDetailView(PermissionsClient, DetailView):
     model = Product
@@ -71,4 +76,14 @@ class ProductDeleteView(AdminPermission, DeleteView):
     template_name = 'products/confirm_delete.html'
     context_object_name = 'product'
     success_url = reverse_lazy('products:list')
+
+    def form_valid(self, form):
+        self.object = self.get_object()
+        print(self.object)
+        self.object.status = StatusProduct.ELIMINADO
+        self.object.available = False
+        self.object.save(update_fields=['status'])
+
+        return redirect(self.get_success_url())
+    
 

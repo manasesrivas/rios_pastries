@@ -8,9 +8,17 @@
 
     <form id="checkout-form" class="mt-6" method="post" action="{% url 'orders:create' %}">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                {% for error in form.non_field_errors %}
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         {# Los inputs product_id / quantity se generan con JS desde localStorage #}
         <div id="checkout-hidden"></div>
+        {{ unavailable_product_ids|default:"[]"|json_script:"unavailable-product-ids" }}
 
         {# Productos del carrito #}
         <div id="checkout-items" class="space-y-3"></div>
@@ -89,7 +97,13 @@
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[c]));
 
-        const itemTemplate = (item) => `
+        const unavailableProductIds = JSON.parse(
+            document.getElementById('unavailable-product-ids').textContent
+        );
+
+        const itemTemplate = (item) => {
+            const unavailable = unavailableProductIds.includes(String(item.id));
+            return `
             <article class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                     <h3 class="break-words font-semibold text-gray-900 dark:text-white">${escapeHtml(item.name)}</h3>
@@ -104,20 +118,50 @@
                     </span>
                     <p class="font-bold text-gray-900 dark:text-white">${money(item.price * item.quantity)}</p>
                 </div>
+                ${unavailable ? `
+                    <button type="button" data-remove-product="${escapeHtml(item.id)}"
+                            class="min-h-10 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                        Eliminar del carrito
+                    </button>` : ''}
             </article>`;
+        };
 
         const hiddenInputs = (item) => `
             <input type="hidden" name="product_id" value="${escapeHtml(item.id)}">
             <input type="hidden" name="quantity" value="${Number(item.quantity) || 1}">`;
 
-        const items = readCart();
-        const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        const checkoutItems = document.getElementById('checkout-items');
+        const checkoutHidden = document.getElementById('checkout-hidden');
+        const checkoutSubmit = document.getElementById('checkout-submit');
 
-        document.getElementById('checkout-items').innerHTML = items.map(itemTemplate).join('');
-        document.getElementById('checkout-hidden').innerHTML = items.map(hiddenInputs).join('');
-        document.getElementById('checkout-total').textContent = money(total);
-        document.getElementById('checkout-empty').classList.toggle('hidden', items.length > 0);
-        document.getElementById('checkout-submit').disabled = items.length === 0;
+        const renderCart = () => {
+            const items = readCart();
+            const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+            checkoutItems.innerHTML = items.map(itemTemplate).join('');
+            checkoutHidden.innerHTML = items.map(hiddenInputs).join('');
+            document.getElementById('checkout-total').textContent = money(total);
+            document.getElementById('checkout-empty').classList.toggle('hidden', items.length > 0);
+            if (checkoutSubmit) {
+                checkoutSubmit.disabled = items.length === 0;
+            }
+        };
+
+        checkoutItems.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-remove-product]');
+            if (!removeButton) {
+                return;
+            }
+
+            const productId = removeButton.dataset.removeProduct;
+            const updatedCart = readCart().filter(
+                (item) => String(item.id) !== productId
+            );
+            localStorage.setItem('cart', JSON.stringify(updatedCart));
+            renderCart();
+        });
+
+        renderCart();
     })();
 </script>
 {% endblock %}

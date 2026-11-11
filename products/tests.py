@@ -2,9 +2,115 @@ from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 from django.urls import reverse
 
+from rest_framework.test import APITestCase
+
 from categories.models import Category
 from products.models import Product
 from users.models import User
+
+
+class ProductListAPITests(APITestCase):
+    def test_api_lists_available_products_without_authentication(self):
+        category = Category.objects.create(name='Pasteles')
+        available_product = Product.objects.create(
+            name='Pastel disponible',
+            description='Pastel de chocolate.',
+            price='12.50',
+            category=category,
+            available=True,
+        )
+        unavailable_product = Product.objects.create(
+            name='Pastel no disponible',
+            description='Pastel de vainilla.',
+            price='10.00',
+            category=category,
+            available=False,
+        )
+
+        response = self.client.get(reverse('products_api:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], available_product.pk)
+        self.assertEqual(response.data[0]['category'], category.pk)
+        self.assertEqual(response.data[0]['price'], '12.50')
+
+    def test_api_rejects_writes_without_authentication(self):
+        response = self.client.post(reverse('products_api:list'), {})
+
+        self.assertEqual(response.status_code, 403)
+
+
+class ProductWriteAPITests(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Pasteles')
+        self.product = Product.objects.create(
+            name='Pastel de chocolate',
+            description='Pastel artesanal.',
+            price='12.50',
+            category=self.category,
+        )
+        self.user = User.objects.create_user(
+            email='product-api@example.com',
+            password='SecurePass123!',
+        )
+
+    def grant_permission(self, codename):
+        permission = Permission.objects.get(
+            content_type__app_label='products',
+            codename=codename,
+        )
+        self.user.user_permissions.add(permission)
+        self.client.force_authenticate(user=self.user)
+
+    def test_create_product_requires_add_permission(self):
+        data = {
+            'name': 'Pastel de fresa',
+            'description': 'Pastel con fresas.',
+            'price': '14.00',
+            'category': self.category.pk,
+            'available': True,
+        }
+
+        response = self.client.post(reverse('products_api:list'), data)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Product.objects.filter(name='Pastel de fresa').exists())
+
+        self.grant_permission('add_product')
+        response = self.client.post(reverse('products_api:list'), data)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['name'], 'Pastel de fresa')
+
+    def test_update_product_requires_change_permission(self):
+        url = reverse('products_api:detail', args=[self.product.pk])
+        data = {'name': 'Pastel actualizado'}
+
+        response = self.client.patch(url, data)
+
+        self.assertEqual(response.status_code, 403)
+
+        self.grant_permission('change_product')
+        response = self.client.patch(url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.name, 'Pastel actualizado')
+
+    def test_delete_product_requires_delete_permission(self):
+        url = reverse('products_api:detail', args=[self.product.pk])
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
+
+        self.grant_permission('delete_product')
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Product.objects.filter(pk=self.product.pk).exists())
 
 
 class ProductCreatePermissionTests(TestCase):
