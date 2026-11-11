@@ -16,9 +16,48 @@ from .models import User
 from .forms import UserModelForm, UserProfileForm, UserUpdateForm
 DIR = 'users/'
 
-# Create your views here.
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, Count
+from orders.models import Order
+from reservations.models import Reservation
+from products.models import Product
+from users.models import User
+
 @login_required
-def home(request): return render(request, 'index.html')
+def dashboard_view(request):
+    user = request.user
+    context = {}
+    
+    # Comprobar si el usuario es staff/admin o pertenece a grupos administrativos
+    is_admin = user.is_staff or user.groups.filter(name__in=['Administrador', 'Recepcionista']).exists()
+    context['is_admin'] = is_admin
+
+    if is_admin:
+        # --- MÉTRICAS Y DATOS DE ADMINISTRADOR ---
+        context['total_orders'] = Order.objects.count()
+        context['pending_orders'] = Order.objects.filter(status__iexact='pendiente').count()
+        context['total_revenue'] = Order.objects.aggregate(total=Sum('total'))['total'] or 0
+        context['total_reservations'] = Reservation.objects.count()
+        context['pending_reservations'] = Reservation.objects.filter(estado='pendiente').count()
+        
+        # Listas recientes para la tabla operativa
+        context['recent_orders'] = Order.objects.select_related('user').order_by('-id')[:5]
+        context['recent_reservations'] = Reservation.objects.select_related('cliente', 'sala').order_by('-fecha_evento')[:5]
+    else:
+        # --- MÉTRICAS Y DATOS DEL CLIENTE ---
+        user_orders = Order.objects.filter(user=user)
+        user_reservations = Reservation.objects.filter(cliente=user)
+        
+        context['my_orders_count'] = user_orders.count()
+        context['my_active_orders'] = user_orders.exclude(status__iexact='entregado').count()
+        context['my_reservations_count'] = user_reservations.count()
+        
+        # Listas propias del cliente
+        context['my_orders'] = user_orders.select_related('user').order_by('-id')[:5]
+        context['my_reservations'] = user_reservations.select_related('sala').order_by('-fecha_evento')[:5]
+
+    return render(request, 'dashboard.html', context)
 
 
 class BasicConfiguration(LoginRequiredMixin, PermissionRequiredMixin):

@@ -151,7 +151,7 @@
         const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
-        // document.querySelectorAll('[data-cart-count]').forEach((el) => (el.textContent = count));
+        document.querySelectorAll('[data-cart-count]').forEach((el) => (el.textContent = count));
 
         const body = document.getElementById('cart-body');
         const table = document.getElementById('cart-table');
