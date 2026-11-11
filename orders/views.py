@@ -4,6 +4,8 @@ from django.db.models import Sum
 from django import forms
 from django.core.exceptions import ValidationError
 from products.models import Product
+from products.models import StatusProduct
+from categories.models import Category
 from detail_orders.models import DetailOrder, Status
 from django.urls import reverse_lazy
 from django.http import HttpResponseBadRequest
@@ -28,6 +30,65 @@ from .utils import is_store_open
 from .services import publish_order_update
 
 from django.contrib import messages
+
+
+def _get_order_product(product_id):
+    try:
+        product_pk = forms.IntegerField(min_value=1).clean(product_id)
+    except ValidationError:
+        return None
+    return Product.all_objects.select_related('category').filter(
+        pk=product_pk,
+    ).first()
+
+
+def _validate_order_products(product_ids):
+    products = {}
+    errors = []
+
+    for product_id in product_ids:
+        product = _get_order_product(product_id)
+        if (
+            product is None
+            or product.status != StatusProduct.ACTIVO
+            or product.category.status != Category.Status.ACTIVO
+        ):
+            errors.append({
+                'product_id': str(product_id),
+                'message': (
+                    f'El producto con ID {product_id} no existe o fue eliminado.'
+                ),
+            })
+        elif not product.available:
+            errors.append({
+                'product_id': str(product_id),
+                'message': (
+                    f'El producto "{product.name}" no está disponible actualmente.'
+                ),
+            })
+        else:
+            products[product.pk] = product
+
+    return products, errors
+
+
+def _render_checkout_error(request, form, message=None, unavailable_products=None):
+    unavailable_products = unavailable_products or []
+    if message:
+        form.add_error(None, message)
+    for unavailable_product in unavailable_products:
+        form.add_error(None, unavailable_product['message'])
+    return render(
+        request,
+        'orders/checkout.html',
+        {
+            'form': form,
+            'order_form': form,
+            'unavailable_product_ids': [
+                product['product_id'] for product in unavailable_products
+            ],
+        },
+    )
 
 
 class PermissionsClient(LoginRequiredMixin, PermissionRequiredMixin):
@@ -136,8 +197,21 @@ class OrderCreateView(PermissionsClient, View):
         form = OrderForm(request.POST)
         if not form.is_valid():
             product_ids = request.POST.getlist('product_id')
+            _, unavailable_products = _validate_order_products(product_ids)
+            if unavailable_products:
+                return _render_checkout_error(
+                    request,
+                    form,
+                    unavailable_products=unavailable_products,
+                )
             if len(product_ids) == 1:
-                product = get_object_or_404(Product, pk=product_ids[0])
+                product = _get_order_product(product_ids[0])
+                if product is None:
+                    return _render_checkout_error(
+                        request,
+                        form,
+                        'Uno de los productos del carrito ya no existe o fue eliminado.',
+                    )
                 return render(
                     request,
                     'products/detail.html',
@@ -154,27 +228,34 @@ class OrderCreateView(PermissionsClient, View):
                 'Envía al menos un producto y una cantidad por cada producto.'
             )
 
-        products_by_id = {}
+        products_by_id, unavailable_products = _validate_order_products(product_ids)
         quantities_by_id = {}
+        quantity_errors = []
 
         for product_id, quantity_value in zip(product_ids, quantities):
-            product = get_object_or_404(Product, pk=product_id)
-            
-            # Verificar disponibilidad individual del producto
-            if not product.available:
-                return HttpResponseBadRequest(
-                    f'El producto "{product.name}" no está disponible actualmente.'
-                )
-
             try:
                 quantity = forms.IntegerField(min_value=1).clean(quantity_value)
             except ValidationError as error:
-                return HttpResponseBadRequest('; '.join(error.messages))
+                quantity_errors.extend(error.messages)
+                continue
 
-            products_by_id[product.pk] = product
-            quantities_by_id[product.pk] = (
-                quantities_by_id.get(product.pk, 0) + quantity
+            try:
+                product_pk = forms.IntegerField(min_value=1).clean(product_id)
+            except ValidationError:
+                continue
+            if product_pk in products_by_id:
+                quantities_by_id[product_pk] = (
+                    quantities_by_id.get(product_pk, 0) + quantity
+                )
+
+        if unavailable_products:
+            return _render_checkout_error(
+                request,
+                form,
+                unavailable_products=unavailable_products,
             )
+        if quantity_errors:
+            return HttpResponseBadRequest('; '.join(quantity_errors))
 
         if not products_by_id:
             return HttpResponseBadRequest('No se recibieron productos válidos.')

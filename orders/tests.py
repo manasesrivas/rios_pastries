@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -377,6 +377,155 @@ class OrderAPITests(APITestCase):
 
         self.client.force_authenticate(user=self.other_user)
         self.assertEqual(self.client.get(self.url).status_code, 403)
+
+
+@override_settings(
+    STORAGES={
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    },
+)
+class OrderCheckoutMissingProductTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='missing-product@example.com',
+            password='SecurePass123!',
+        )
+        self.user.user_permissions.add(
+            *Permission.objects.filter(
+                content_type__app_label='orders',
+                codename__in=['view_order', 'add_order'],
+            )
+        )
+        self.client.force_login(self.user)
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_checkout_creates_order_when_every_product_is_available(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles disponibles')
+        product = Product.objects.create(
+            name='Pastel disponible',
+            description='Disponible para pedido.',
+            price=Decimal('10.00'),
+            category=category,
+            available=True,
+        )
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': str(product.pk),
+                'quantity': '2',
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.get(user=self.user)
+        detail = DetailOrder.objects.get(order=order)
+        self.assertEqual(detail.product, product)
+        self.assertEqual(detail.quantity, 2)
+        self.assertEqual(detail.subtotal, Decimal('20.00'))
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_missing_or_soft_deleted_product_returns_checkout_error(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles checkout')
+        deleted_product = Product.objects.create(
+            name='Pastel eliminado',
+            description='Ya no disponible.',
+            price=Decimal('12.00'),
+            category=category,
+        )
+        deleted_product.status = StatusProduct.ELIMINADO
+        deleted_product.save(update_fields=['status'])
+
+        for product_id in ('999999', str(deleted_product.pk)):
+            with self.subTest(product_id=product_id):
+                response = self.client.post(
+                    reverse('orders:create'),
+                    {
+                        'product_id': product_id,
+                        'quantity': '1',
+                        'metodo_pago': Order.MetodoPago.EFECTIVO,
+                        'tipo_entrega': Order.TipoEntrega.RECOGER,
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateUsed(response, 'orders/checkout.html')
+                self.assertContains(response, f'El producto con ID {product_id}')
+                self.assertContains(response, 'Eliminar del carrito')
+                self.assertContains(response, 'data-remove-product')
+                self.assertEqual(
+                    response.context['unavailable_product_ids'],
+                    [product_id],
+                )
+                self.assertEqual(Order.objects.count(), 0)
+                self.assertEqual(DetailOrder.objects.count(), 0)
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_checkout_reports_all_unavailable_products_without_saving(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles múltiples')
+        available_product = Product.objects.create(
+            name='Pastel disponible',
+            description='Disponible.',
+            price=Decimal('10.00'),
+            category=category,
+        )
+        inactive_product = Product.objects.create(
+            name='Pastel no disponible',
+            description='No disponible.',
+            price=Decimal('12.00'),
+            category=category,
+            available=False,
+        )
+        deleted_product = Product.objects.create(
+            name='Pastel eliminado',
+            description='Eliminado.',
+            price=Decimal('14.00'),
+            category=category,
+        )
+        deleted_product.status = StatusProduct.ELIMINADO
+        deleted_product.save(update_fields=['status'])
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': [
+                    str(available_product.pk),
+                    str(inactive_product.pk),
+                    str(deleted_product.pk),
+                    '999999',
+                ],
+                'quantity': ['1', '2', '1', '1'],
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pastel no disponible')
+        self.assertContains(response, f'ID {deleted_product.pk}')
+        self.assertContains(response, 'ID 999999')
+        self.assertEqual(
+            response.context['unavailable_product_ids'],
+            [str(inactive_product.pk), str(deleted_product.pk), '999999'],
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
 
 
 class OrderFormTests(TestCase):
