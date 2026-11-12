@@ -1,4 +1,4 @@
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.permissions import DjangoModelPermissions
 
 from .models import EstadoReservacion, Reservation
@@ -33,3 +33,12 @@ class ReservationListAPIView(ListAPIView):
             queryset = queryset.filter(cliente=self.request.user)
 
         return queryset
+
+
+class ReservationCreateAPIView(CreateAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    permission_classes = [ReservationModelPermissions]
+
+    def perform_create(self, serializer):
+        serializer.save(cliente=self.request.user)
