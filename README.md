@@ -54,6 +54,12 @@ Ejemplo de cuerpo:
 }
 ```
 
+## API de salas
+
+`GET /api/halls/` y `GET /api/halls/<id>/` requieren autenticación JWT y el
+permiso `view_hall`. Además de `venueName`, cada sala incluye `venue` con
+`id`, `name`, `address`, `descripcion` y `status` del local.
+
 ## API de reservaciones
 
 `GET /api/reservations/` requiere autenticación JWT y el permiso
