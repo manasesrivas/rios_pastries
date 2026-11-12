@@ -1,7 +1,7 @@
 from datetime import time
 from django.utils import timezone
 
-OPENING_TIME = time(9, 0, 0)   # 09:00 AM
+OPENING_TIME = time(1, 0, 0)   # 09:00 AM
 CLOSING_TIME = time(23, 0, 0)  # 07:00 PM (19:00 HS)
 
 def is_store_open() -> bool:

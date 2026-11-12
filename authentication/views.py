@@ -59,6 +59,8 @@ class UsersCreateView(CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
+        self.object.is_active = False
+        self.object.save(update_fields=['is_active'])
         send_verification_email(self.request, self.object)
         return redirect(self.success_url)
 

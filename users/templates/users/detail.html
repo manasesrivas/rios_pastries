@@ -29,6 +29,14 @@
                     <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.email }}</dd>
                 </div>
                 <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Creado</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.created_at }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Ultima actulizacion</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ user.updated_at }}</dd>
+                </div>
+                <div>
                     <dt class="font-medium text-gray-600 dark:text-gray-400">Grupo</dt>
                     <dd class="mt-1 text-gray-900 dark:text-gray-100">
                         {% for group in user.groups.all %}
@@ -44,6 +52,12 @@
                         {{ user.get_estado_display }}
                     </dd>
                 </div>
+                <div>
+                    <dt class="font-medium text-gray-600 dark:text-gray-400">Acceso</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">
+                        {% if user.is_active %}Habilitado{% else %}Deshabilitado{% endif %}
+                    </dd>
+                </div>
             </dl>
 
             <div class="mt-6 flex flex-col gap-3 border-t border-gray-200 pt-5 dark:border-gray-700 sm:flex-row">
@@ -54,13 +68,17 @@
                     <a href="{% url 'users:delete' user.pk %}" class="flex-1 rounded-lg bg-red-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400">
                         Eliminar
                     </a>
-                {% elif request.user.is_superuser %}
-                    <form method="post" action="{% url 'users:restore' user.pk %}" class="flex-1">
+                    {% if can_resend_verification %}
+                    <form method="post" action="{% url 'users:resend_verification' user.pk %}" class="flex-1">
                         {% csrf_token %}
-                        <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400">
-                            Restaurar usuario
+                        <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            Reenviar correo de verificación
                         </button>
+                        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">El enlace permitirá habilitar el acceso a esta cuenta.</p>
                     </form>
+                    {% endif %}
+
+                    {% elif request.user.is_superuser %}
                 {% endif %}
             </div>
         </div>

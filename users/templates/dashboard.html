@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    
+    <!-- Encabezado de bienvenida -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">
+                ¡Hola, {{ user.nombres|default:user.nombres }}!
+            </h1>
+            <p class="text-gray-600 dark:text-gray-300 mt-1">
+                {% if is_admin %}
+                    Panel de administración general de Ríos Pastries.
+                {% else %}
+                    Bienvenido a tu panel personal de pedidos y reservas.
+                {% endif %}
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-3">
+            {% if is_admin %}
+                <a href="{% url 'products:create' %}" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg shadow transition">
+                    + Nuevo Producto
+                </a>
+                <a href="{% url 'halls:create' %}" class="bg-gray-800 hover:bg-gray-900 text-white font-medium px-4 py-2 rounded-lg shadow transition">
+                    + Nueva Sala
+                </a>
+            {% else %}
+                <a href="{% url 'products:list' %}" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg shadow transition">
+                    Ver productos / Pedir
+                </a>
+                <a href="{% url 'reservations:create' %}" class="border border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-gray-800 font-medium px-4 py-2 rounded-lg transition">
+                    Reservar Sala
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if is_admin %}
+        <!-- ========================================== -->
+        <!--           VISTA DE ADMINISTRADOR           -->
+        <!-- ========================================== -->
+        
+        <!-- Tarjetas de KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos Totales</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${{ total_revenue|floatformat:2 }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pedidos Pendientes</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ pending_orders }} / {{ total_orders }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reservas Pendientes</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ pending_reservations }} / {{ total_reservations }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado del Sistema</p>
+                <span class="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                    Operativo
+                </span>
+            </div>
+        </div>
+
+        <!-- Tablas de Gestión Rápida -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Últimos Pedidos -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-white">Últimos Pedidos Recibidos</h2>
+                    <a href="{% url 'orders:list' %}" class="text-sm text-amber-600 hover:underline">Ver todos</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-semibold text-gray-500 dark:text-gray-300">
+                            <tr>
+                                <th class="p-3">ID</th>
+                                <th class="p-3">Cliente</th>
+                                <th class="p-3">Total</th>
+                                <th class="p-3">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td class="p-3 font-medium">#{{ order.id }}</td>
+                                <td class="p-3">{{ order.user.email }}</td>
+                                <td class="p-3">${{ order.total }}</td>
+                                <td class="p-3">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="p-3 text-center">No hay pedidos registrados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Últimas Reservas -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-white">Próximas Reservas de Salas</h2>
+                    <a href="{% url 'reservations:list' %}" class="text-sm text-amber-600 hover:underline">Ver todas</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-semibold text-gray-500 dark:text-gray-300">
+                            <tr>
+                                <th class="p-3">Sala</th>
+                                <th class="p-3">Fecha</th>
+                                <th class="p-3">Cliente</th>
+                                <th class="p-3">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for res in recent_reservations %}
+                            <tr>
+                                <td class="p-3 font-medium">{{ res.sala.name }}</td>
+                                <td class="p-3">{{ res.fecha_evento|date:"d/m/Y" }}</td>
+                                <td class="p-3">{{ res.cliente.nombres|default:res.cliente.email }} {{ res.cliente.apellidos }}</td>
+                                <td class="p-3">
+                                    {% include 'reservations/_estado_badge.html' with reservation=res %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="p-3 text-center">No hay reservas registradas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- ========================================== -->
+        <!--             VISTA DE CLIENTE               -->
+        <!-- ========================================== -->
+        
+        <!-- Tarjetas del Cliente -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mis Pedidos Realizados</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ my_orders_count }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pedidos En Proceso</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ my_active_orders }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mis Reservas de Eventos</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">{{ my_reservations_count }}</p>
+            </div>
+        </div>
+
+        <!-- Secciones del Cliente -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Historial Reciente de Pedidos -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Mis Últimos Pedidos</h2>
+                <div class="space-y-4">
+                    {% for order in my_orders %}
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div>
+                            <p class="font-semibold text-gray-800 dark:text-white">Pedido #{{ order.id }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-300">{{ order.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-amber-600">${{ order.total }}</p>
+                            <span class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800">
+                                {{ order.status.nombre }}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-gray-500">Aún no has realizado pedidos.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Próximas Reservas -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Mis Reservas Activas</h2>
+                <div class="space-y-4">
+                    {% for res in my_reservations %}
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div>
+                            <p class="font-semibold text-gray-800 dark:text-white">{{ res.sala.nombre }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-300">Fecha: {{ res.fecha_evento|date:"d/m/Y" }}</p>
+                        </div>
+                        <div>
+                            {% include 'reservations/_estado_badge.html' with estado=res.estado %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-sm text-gray-500">No tienes reservas activas de salas.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

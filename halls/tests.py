@@ -3,9 +3,132 @@ from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import reverse
 
+from rest_framework.test import APITestCase
+
 from venues.models import Venue
 
 from .models import Hall, HallStatus
+
+
+class HallAPITests(APITestCase):
+    def setUp(self):
+        self.venue = Venue.objects.create(
+            name='Centro API',
+            address='Avenida Central',
+            descripcion='Local para eventos',
+        )
+        self.available_hall = Hall.objects.create(
+            venue=self.venue,
+            name='Salón disponible',
+            capacity=50,
+            price='125.00',
+        )
+        self.reserved_hall = Hall.objects.create(
+            venue=self.venue,
+            name='Salón reservado',
+            capacity=30,
+            price='90.00',
+            status=HallStatus.RESERVADO,
+        )
+
+    def test_list_shows_available_halls_to_users_with_view_permission(self):
+        user = get_user_model().objects.create_user(
+            email='hall-api-reader@example.com',
+            password='SecurePass123!',
+        )
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label='halls',
+                codename='view_hall',
+            )
+        )
+        self.client.force_authenticate(user=user)
+
+        response = self.client.get(reverse('halls_api:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [hall['id'] for hall in response.data],
+            [self.available_hall.pk],
+        )
+        self.assertEqual(response.data[0]['venueName'], self.venue.name)
+        self.assertEqual(response.data[0]['venue'], {
+            'id': self.venue.pk,
+            'name': 'Centro API',
+            'address': 'Avenida Central',
+            'descripcion': 'Local para eventos',
+            'status': self.venue.status,
+        })
+
+    def test_detail_shows_available_hall_and_hides_reserved_hall(self):
+        user = get_user_model().objects.create_user(
+            email='hall-api-detail-reader@example.com',
+            password='SecurePass123!',
+        )
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label='halls',
+                codename='view_hall',
+            )
+        )
+        self.client.force_authenticate(user=user)
+
+        available_response = self.client.get(
+            reverse('halls_api:detail', args=[self.available_hall.pk])
+        )
+        reserved_response = self.client.get(
+            reverse('halls_api:detail', args=[self.reserved_hall.pk])
+        )
+
+        self.assertEqual(available_response.status_code, 200)
+        self.assertEqual(available_response.data['name'], 'Salón disponible')
+        self.assertEqual(available_response.data['venueName'], self.venue.name)
+        self.assertEqual(available_response.data['venue'], {
+            'id': self.venue.pk,
+            'name': 'Centro API',
+            'address': 'Avenida Central',
+            'descripcion': 'Local para eventos',
+            'status': self.venue.status,
+        })
+        self.assertEqual(reserved_response.status_code, 404)
+
+    def test_list_and_detail_require_authentication_and_view_permission(self):
+        list_url = reverse('halls_api:list')
+        detail_url = reverse('halls_api:detail', args=[self.available_hall.pk])
+
+        self.assertEqual(self.client.get(list_url).status_code, 401)
+        self.assertEqual(self.client.get(detail_url).status_code, 401)
+
+        user = get_user_model().objects.create_user(
+            email='hall-api-no-permission@example.com',
+            password='SecurePass123!',
+        )
+        self.client.force_authenticate(user=user)
+
+        self.assertEqual(self.client.get(list_url).status_code, 403)
+        self.assertEqual(self.client.get(detail_url).status_code, 403)
+
+    def test_hall_manager_can_see_reserved_halls(self):
+        manager = get_user_model().objects.create_user(
+            email='hall-api-manager@example.com',
+            password='SecurePass123!',
+        )
+        manager.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label='halls',
+                codename='view_hall',
+            ),
+            Permission.objects.get(
+                content_type__app_label='halls',
+                codename='change_hall',
+            )
+        )
+        self.client.force_authenticate(user=manager)
+
+        response = self.client.get(reverse('halls_api:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
 
 
 class HallViewsTests(TestCase):

@@ -86,34 +86,7 @@
                 </a>
             </li>
 
-            {% if request.user|has_group:"Cliente" %}
-                <li class="shrink-0">
-                    <button class="relative inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-indigo-300">
-                        <div id="notification-cart"></div>
-                        <span aria-hidden="true">
-                            <img src="{% static 'assets/cart.svg' %}" alt="">
-                        </span>
-                        Carrito
-                    </button>
-                </li>
-                <style>
-                    .notification-cart{
-                        background: red;
-                        position: absolute;
-                        bottom: 0;
-                        right: 0;
-                        color: white;
-                        padding: 4px;
-                        border-radius: 15px;
-                        aspect-ratio: 1/1;
-                        width: 5px;
-                    }
-                </style>
-                <script>
-                    const notificationCart = document.getElementById('notification-cart');
-                    notificationCart.hidden = true;
-                </script>
-            {% endif %}
+            
         {% endif %}
     </ul>
 </nav>

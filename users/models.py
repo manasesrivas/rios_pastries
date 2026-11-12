@@ -12,7 +12,6 @@ class UserManager(BaseUserManager):
             raise ValueError('El usuario debe tener un email')
 
         email = self.normalize_email(email)
-
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -56,6 +55,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         choices=Estado.choices,
         default=Estado.ACTIVO,
     )
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     objects = UserManager()
 

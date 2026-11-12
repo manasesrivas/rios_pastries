@@ -1,0 +1,5 @@
+api
+https://github.com/manasesrivas/rios_pastries.git
+
+aplicacion movil
+https://github.com/manasesrivas/rios-pastries-movil-app.git
