@@ -52,16 +52,16 @@ class UserRegisterForm(UserCreationForm):
                     message="Ingresa un teléfono de exactamente 9 dígitos."
                 )
             ],
-            widget=forms.NumberInput(attrs={
-            'type': 'tel',
-            'placeholder': '1234-1234',
-            'maxlength': '9',
-            'pattern': r'[0-9]{4}-[0-9]{4}',
-            'required': True,
-            'class': TAILWIND_INPUT_CLASSES,
-            'pattern':"[0-9]{4}-[0-9]{4}"
-            })
-        )
+    widget=forms.TextInput(attrs={
+        'type': 'tel',
+        'placeholder': '0000-0000',
+        'maxlength': '9',
+        'pattern': r'[0-9]{4}-[0-9]{4}',
+        'required': True,
+        'class': TAILWIND_INPUT_CLASSES,
+        'oninput': "this.value = this.value.replace(/[^0-9]/g, '').replace(/^([0-9]{4})([0-9])/, '$1-$2').slice(0, 9)"
+    }))
+
     class Meta:
         model = User
         fields = [
@@ -134,7 +134,7 @@ class UserRegisterForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.is_active = True
+        user.is_active = False
         user.save()
 
         if commit:

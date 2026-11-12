@@ -150,6 +150,7 @@ class UserRestoreView(LoginRequiredMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, pk):
+        print(pk)
         user = get_object_or_404(
             User,
             pk=pk,
