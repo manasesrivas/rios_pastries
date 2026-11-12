@@ -1,8 +1,10 @@
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.http import QueryDict
 from django.test import SimpleTestCase
+from django.utils import timezone
 from django.urls import reverse
 
 from rest_framework.test import APITestCase
@@ -33,7 +35,11 @@ class ReservationAPITests(APITestCase):
             Permission.objects.get(
                 content_type__app_label='reservations',
                 codename='view_reservation',
-            )
+            ),
+            Permission.objects.get(
+                content_type__app_label='reservations',
+                codename='add_reservation',
+            ),
         )
         self.client.force_authenticate(user=self.client_user)
 
@@ -54,6 +60,7 @@ class ReservationAPITests(APITestCase):
             sala=self.hall,
         )
         self.url = reverse('reservations_api:list')
+        self.create_url = reverse('reservations_api:create')
 
     def test_list_serializes_model_fields_and_real_hall_and_venue_data(self):
         response = self.client.get(self.url)
@@ -125,6 +132,57 @@ class ReservationAPITests(APITestCase):
         )
         self.client.force_authenticate(user=no_permission_user)
         self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_create_assigns_authenticated_client_and_model_default_state(self):
+        fecha_evento = timezone.localdate() + timedelta(days=10)
+        response = self.client.post(
+            self.create_url,
+            {
+                'fecha_evento': fecha_evento.isoformat(),
+                'cantidad_personas': 40,
+                'sala': self.hall.pk,
+                'cliente': self.other_user.pk,
+                'estado': EstadoReservacion.CANCELADA,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        reservation = Reservation.objects.get(pk=response.data['id'])
+        self.assertEqual(reservation.cliente, self.client_user)
+        self.assertEqual(reservation.estado, EstadoReservacion.CONFIRMADA)
+
+    def test_create_rejects_occupied_hall_and_over_capacity(self):
+        fecha_ocupada = timezone.localdate() + timedelta(days=10)
+        Reservation.objects.create(
+            cliente=self.other_user,
+            fecha_evento=fecha_ocupada,
+            cantidad_personas=20,
+            sala=self.hall,
+        )
+        occupied_response = self.client.post(
+            self.create_url,
+            {
+                'fecha_evento': fecha_ocupada.isoformat(),
+                'cantidad_personas': 40,
+                'sala': self.hall.pk,
+            },
+            format='json',
+        )
+        capacity_response = self.client.post(
+            self.create_url,
+            {
+                'fecha_evento': (fecha_ocupada + timedelta(days=1)).isoformat(),
+                'cantidad_personas': 101,
+                'sala': self.hall.pk,
+            },
+            format='json',
+        )
+
+        self.assertEqual(occupied_response.status_code, 400)
+        self.assertIn('fecha_evento', occupied_response.data)
+        self.assertEqual(capacity_response.status_code, 400)
+        self.assertIn('cantidad_personas', capacity_response.data)
 
 
 class ReservationCreateUrlTests(SimpleTestCase):
