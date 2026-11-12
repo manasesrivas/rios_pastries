@@ -8,6 +8,11 @@ para encender el servidor:
 python manage.py runserver
 ```
 
+`DEBUG` se desactiva cuando está definida `RIOS_PASTRIES_EXTERNAL_HOSTNAME`
+o `RENDER_EXTERNAL_HOSTNAME`; sin ninguna de ellas permanece activo para
+desarrollo local. En producción, configura también `EMAIL_ADDRESS` y
+`EMAIL_HOST_PASSWORD` para enviar correos mediante SMTP.
+
 ## Reenvío de verificación
 
 En el detalle de un usuario con acceso deshabilitado y que no esté eliminado,
