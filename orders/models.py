@@ -67,6 +67,17 @@ class Order(models.Model):
         choices=Estado.choices,
         default=Estado.PENDIENTE,
     )
+    idempotency_key = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    request_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+    )
 
     def __str__(self):
         return f"Pedido #{self.pk} - {self.user}"

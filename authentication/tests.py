@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
@@ -25,6 +27,25 @@ class LoginFormTests(TestCase):
 
 
 class UserRegisterFormTests(TestCase):
+    @patch('authentication.views.send_verification_email')
+    def test_registration_saves_user_as_inactive(self, send_verification_email):
+        Group.objects.get_or_create(name='Cliente')
+
+        response = self.client.post(reverse('authentication:register'), {
+            'nombres': 'Ana',
+            'apellidos': 'Rivas',
+            'email': 'ana@example.com',
+            'telefono': '1234-5678',
+            'direccion': 'Calle principal',
+            'password1': 'ComplexPass123!',
+            'password2': 'ComplexPass123!',
+        })
+
+        user = get_user_model().objects.get(email='ana@example.com')
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(user.is_active)
+        send_verification_email.assert_called_once()
+
     def test_registration_fields_include_tailwind_classes(self):
         form = UserRegisterForm()
 

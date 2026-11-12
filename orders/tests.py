@@ -1,6 +1,7 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from asgiref.sync import async_to_sync
@@ -10,14 +11,521 @@ from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from rest_framework.test import APITestCase
+
 from orders.forms import OrderForm
 from orders.models import Order
-from orders.consumers import NoticationsConsumer
-from products.models import Product
+from orders.consumers import NotificationsConsumer
+from products.models import Product, StatusProduct
 from categories.models import Category
 from detail_orders.models import DetailOrder
 
 User = get_user_model()
+
+
+class OrderAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='order-api@example.com',
+            password='SecurePass123!',
+            nombres='Ana',
+            apellidos='Cliente',
+        )
+        self.other_user = User.objects.create_user(
+            email='other-order-api@example.com',
+            password='SecurePass123!',
+        )
+        order_permission = Permission.objects.filter(
+            content_type__app_label='orders',
+            codename__in=['view_order', 'add_order'],
+        )
+        self.user.user_permissions.add(*order_permission)
+        self.client.force_authenticate(user=self.user)
+
+        self.category = Category.objects.create(name='Pasteles API')
+        self.product = Product.objects.create(
+            name='Pastel API',
+            description='Pastel para pruebas de API.',
+            price=Decimal('12.50'),
+            category=self.category,
+            available=True,
+        )
+        self.url = reverse('orders_api:list_create')
+        self.validate_url = reverse('orders_api:validate-cart')
+
+    def test_list_only_returns_authenticated_users_orders(self):
+        own_order = Order.objects.create(
+            user=self.user,
+            metodo_pago=Order.MetodoPago.EFECTIVO,
+            tipo_entrega=Order.TipoEntrega.RECOGER,
+        )
+        Order.objects.create(
+            user=self.other_user,
+            metodo_pago=Order.MetodoPago.EFECTIVO,
+            tipo_entrega=Order.TipoEntrega.RECOGER,
+        )
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item['id'] for item in response.data], [own_order.pk])
+
+    def test_manager_also_only_sees_the_authenticated_users_orders(self):
+        manager_group, _ = Group.objects.get_or_create(name='Administrador')
+        self.user.groups.add(manager_group)
+        own_order = Order.objects.create(
+            user=self.user,
+            metodo_pago=Order.MetodoPago.EFECTIVO,
+            tipo_entrega=Order.TipoEntrega.RECOGER,
+        )
+        Order.objects.create(
+            user=self.other_user,
+            metodo_pago=Order.MetodoPago.EFECTIVO,
+            tipo_entrega=Order.TipoEntrega.RECOGER,
+        )
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item['id'] for item in response.data], [own_order.pk])
+
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_create_order_calculates_total_from_product_prices(self, store_is_open):
+        payload = {
+            'metodo_pago': Order.MetodoPago.TARJETA,
+            'tipo_entrega': Order.TipoEntrega.DOMICILIO,
+            'direccion': 'Calle de prueba',
+            'user_id': self.other_user.pk,
+            'items': [{
+                'product_id': self.product.pk,
+                'quantity': 2,
+                'price': '0.01',
+            }],
+        }
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.url, payload, format='json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['user'], self.user.pk)
+        self.assertEqual(response.data['subtotal'], '25.00')
+        self.assertEqual(response.data['total'], '25.00')
+        self.assertEqual(len(response.data['details']), 1)
+        detail = DetailOrder.objects.get(order_id=response.data['id'])
+        self.assertEqual(detail.quantity, 2)
+        self.assertEqual(detail.price, Decimal('12.50'))
+        self.assertEqual(detail.subtotal, Decimal('25.00'))
+
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_create_rejects_products_that_are_not_available(self, store_is_open):
+        self.product.available = False
+        self.product.save(update_fields=['available'])
+        payload = {
+            'metodo_pago': Order.MetodoPago.EFECTIVO,
+            'tipo_entrega': Order.TipoEntrega.RECOGER,
+            'items': [{'product_id': self.product.pk, 'quantity': 1}],
+        }
+
+        response = self.client.post(self.url, payload, format='json')
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(
+            response.data['errors'][0]['code'],
+            'PRODUCT_INACTIVE',
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    def test_validate_cart_treats_products_in_deleted_categories_as_missing(self):
+        self.category.status = Category.Status.ELIMINADO
+        self.category.save(update_fields=['status'])
+
+        response = self.client.post(
+            self.validate_url,
+            {
+                'items': [{
+                    'product_id': self.product.pk,
+                    'quantity': 1,
+                }],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(
+            response.data['errors'][0]['code'],
+            'PRODUCT_NOT_FOUND',
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    def test_validate_cart_returns_valid_without_writing_orders(self):
+        response = self.client.post(
+            self.validate_url,
+            {
+                'items': [{
+                    'product_id': self.product.pk,
+                    'quantity': 2,
+                }],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {'valid': True})
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    def test_validate_cart_returns_all_unavailable_product_errors(self):
+        inactive_product = Product.objects.create(
+            name='Pastel no disponible',
+            description='No disponible.',
+            price=Decimal('8.00'),
+            category=self.category,
+            available=False,
+        )
+        deleted_product = Product.all_objects.create(
+            name='Pastel eliminado',
+            description='Eliminado.',
+            price=Decimal('9.00'),
+            category=self.category,
+            status=StatusProduct.ELIMINADO,
+        )
+        missing_product_id = 999999
+
+        response = self.client.post(
+            self.validate_url,
+            {
+                'items': [
+                    {'product_id': deleted_product.pk, 'quantity': 1},
+                    {'product_id': inactive_product.pk, 'quantity': 1},
+                    {'product_id': missing_product_id, 'quantity': 1},
+                ],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data['code'], 'CART_UNAVAILABLE_PRODUCTS')
+        self.assertEqual(
+            response.data['errors'],
+            [
+                {
+                    'product_id': deleted_product.pk,
+                    'code': 'PRODUCT_NOT_FOUND',
+                    'message': 'El producto fue eliminado o no existe.',
+                },
+                {
+                    'product_id': inactive_product.pk,
+                    'code': 'PRODUCT_INACTIVE',
+                    'message': 'El producto ya no está disponible.',
+                },
+                {
+                    'product_id': missing_product_id,
+                    'code': 'PRODUCT_NOT_FOUND',
+                    'message': 'El producto fue eliminado o no existe.',
+                },
+            ],
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_create_rejects_entire_cart_when_multiple_products_are_unavailable(
+        self,
+        store_is_open,
+    ):
+        self.product.status = StatusProduct.ELIMINADO
+        self.product.save(update_fields=['status'])
+        inactive_product = Product.objects.create(
+            name='Pastel no disponible',
+            description='No disponible.',
+            price=Decimal('8.00'),
+            category=self.category,
+            available=False,
+        )
+        payload = {
+            'metodo_pago': Order.MetodoPago.EFECTIVO,
+            'tipo_entrega': Order.TipoEntrega.RECOGER,
+            'items': [
+                {'product_id': self.product.pk, 'quantity': 1},
+                {'product_id': inactive_product.pk, 'quantity': 2},
+                {'product_id': 999999, 'quantity': 1},
+            ],
+        }
+
+        response = self.client.post(self.url, payload, format='json')
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(len(response.data['errors']), 3)
+        self.assertEqual(
+            [error['code'] for error in response.data['errors']],
+            [
+                'PRODUCT_NOT_FOUND',
+                'PRODUCT_INACTIVE',
+                'PRODUCT_NOT_FOUND',
+            ],
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    def test_validation_rejects_duplicate_ids_and_invalid_quantities(self):
+        duplicate_response = self.client.post(
+            self.validate_url,
+            {
+                'items': [
+                    {'product_id': self.product.pk, 'quantity': 1},
+                    {'product_id': self.product.pk, 'quantity': 2},
+                ],
+            },
+            format='json',
+        )
+        quantity_response = self.client.post(
+            self.url,
+            {
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+                'items': [{'product_id': self.product.pk, 'quantity': 0}],
+            },
+            format='json',
+        )
+
+        self.assertEqual(duplicate_response.status_code, 400)
+        self.assertEqual(quantity_response.status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_idempotency_key_prevents_duplicate_orders(self, store_is_open):
+        payload = {
+            'metodo_pago': Order.MetodoPago.EFECTIVO,
+            'tipo_entrega': Order.TipoEntrega.RECOGER,
+            'items': [{'product_id': self.product.pk, 'quantity': 1}],
+        }
+
+        first_response = self.client.post(
+            self.url,
+            payload,
+            format='json',
+            HTTP_IDEMPOTENCY_KEY='order-request-1',
+        )
+        retry_response = self.client.post(
+            self.url,
+            payload,
+            format='json',
+            HTTP_IDEMPOTENCY_KEY='order-request-1',
+        )
+
+        self.assertEqual(first_response.status_code, 201)
+        self.assertEqual(retry_response.status_code, 200)
+        self.assertEqual(first_response.data['id'], retry_response.data['id'])
+        self.assertEqual(Order.objects.count(), 1)
+        self.assertEqual(DetailOrder.objects.count(), 1)
+
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_idempotency_key_rejects_a_different_request(self, store_is_open):
+        payload = {
+            'metodo_pago': Order.MetodoPago.EFECTIVO,
+            'tipo_entrega': Order.TipoEntrega.RECOGER,
+            'items': [{'product_id': self.product.pk, 'quantity': 1}],
+        }
+        self.client.post(
+            self.url,
+            payload,
+            format='json',
+            HTTP_IDEMPOTENCY_KEY='order-request-2',
+        )
+        payload['items'][0]['quantity'] = 2
+
+        response = self.client.post(
+            self.url,
+            payload,
+            format='json',
+            HTTP_IDEMPOTENCY_KEY='order-request-2',
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data['code'], 'IDEMPOTENCY_KEY_REUSED')
+        self.assertEqual(Order.objects.count(), 1)
+        self.assertEqual(DetailOrder.objects.count(), 1)
+
+    @patch(
+        'orders.order_service.DetailOrder.objects.create',
+        side_effect=RuntimeError('detail insert failed'),
+    )
+    @patch('orders.serializers.is_store_open', return_value=True)
+    def test_detail_creation_failure_rolls_back_the_order(
+        self,
+        store_is_open,
+        create_detail,
+    ):
+        payload = {
+            'metodo_pago': Order.MetodoPago.EFECTIVO,
+            'tipo_entrega': Order.TipoEntrega.RECOGER,
+            'items': [{'product_id': self.product.pk, 'quantity': 1}],
+        }
+
+        with self.assertRaises(RuntimeError):
+            self.client.post(self.url, payload, format='json')
+
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
+
+    def test_list_requires_authentication_and_view_permission(self):
+        self.client.force_authenticate(user=None)
+        self.assertEqual(self.client.get(self.url).status_code, 401)
+
+        self.client.force_authenticate(user=self.other_user)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+
+@override_settings(
+    STORAGES={
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    },
+)
+class OrderCheckoutMissingProductTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='missing-product@example.com',
+            password='SecurePass123!',
+        )
+        self.user.user_permissions.add(
+            *Permission.objects.filter(
+                content_type__app_label='orders',
+                codename__in=['view_order', 'add_order'],
+            )
+        )
+        self.client.force_login(self.user)
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_checkout_creates_order_when_every_product_is_available(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles disponibles')
+        product = Product.objects.create(
+            name='Pastel disponible',
+            description='Disponible para pedido.',
+            price=Decimal('10.00'),
+            category=category,
+            available=True,
+        )
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': str(product.pk),
+                'quantity': '2',
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.get(user=self.user)
+        detail = DetailOrder.objects.get(order=order)
+        self.assertEqual(detail.product, product)
+        self.assertEqual(detail.quantity, 2)
+        self.assertEqual(detail.subtotal, Decimal('20.00'))
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_missing_or_soft_deleted_product_returns_checkout_error(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles checkout')
+        deleted_product = Product.objects.create(
+            name='Pastel eliminado',
+            description='Ya no disponible.',
+            price=Decimal('12.00'),
+            category=category,
+        )
+        deleted_product.status = StatusProduct.ELIMINADO
+        deleted_product.save(update_fields=['status'])
+
+        for product_id in ('999999', str(deleted_product.pk)):
+            with self.subTest(product_id=product_id):
+                response = self.client.post(
+                    reverse('orders:create'),
+                    {
+                        'product_id': product_id,
+                        'quantity': '1',
+                        'metodo_pago': Order.MetodoPago.EFECTIVO,
+                        'tipo_entrega': Order.TipoEntrega.RECOGER,
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateUsed(response, 'orders/checkout.html')
+                self.assertContains(response, f'El producto con ID {product_id}')
+                self.assertContains(response, 'Eliminar del carrito')
+                self.assertContains(response, 'data-remove-product')
+                self.assertEqual(
+                    response.context['unavailable_product_ids'],
+                    [product_id],
+                )
+                self.assertEqual(Order.objects.count(), 0)
+                self.assertEqual(DetailOrder.objects.count(), 0)
+
+    @patch('orders.views.is_store_open', return_value=True)
+    def test_checkout_reports_all_unavailable_products_without_saving(
+        self,
+        store_is_open,
+    ):
+        category = Category.objects.create(name='Pasteles múltiples')
+        available_product = Product.objects.create(
+            name='Pastel disponible',
+            description='Disponible.',
+            price=Decimal('10.00'),
+            category=category,
+        )
+        inactive_product = Product.objects.create(
+            name='Pastel no disponible',
+            description='No disponible.',
+            price=Decimal('12.00'),
+            category=category,
+            available=False,
+        )
+        deleted_product = Product.objects.create(
+            name='Pastel eliminado',
+            description='Eliminado.',
+            price=Decimal('14.00'),
+            category=category,
+        )
+        deleted_product.status = StatusProduct.ELIMINADO
+        deleted_product.save(update_fields=['status'])
+
+        response = self.client.post(
+            reverse('orders:create'),
+            {
+                'product_id': [
+                    str(available_product.pk),
+                    str(inactive_product.pk),
+                    str(deleted_product.pk),
+                    '999999',
+                ],
+                'quantity': ['1', '2', '1', '1'],
+                'metodo_pago': Order.MetodoPago.EFECTIVO,
+                'tipo_entrega': Order.TipoEntrega.RECOGER,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pastel no disponible')
+        self.assertContains(response, f'ID {deleted_product.pk}')
+        self.assertContains(response, 'ID 999999')
+        self.assertEqual(
+            response.context['unavailable_product_ids'],
+            [str(inactive_product.pk), str(deleted_product.pk), '999999'],
+        )
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(DetailOrder.objects.count(), 0)
 
 
 class OrderFormTests(TestCase):
@@ -615,7 +1123,7 @@ class OrderNotificationConsumerTests(TestCase):
     def test_order_manager_receives_product_added_to_order_event(self):
         async def verify_notification():
             communicator = WebsocketCommunicator(
-                NoticationsConsumer.as_asgi(),
+                NotificationsConsumer.as_asgi(),
                 '/ws/notificaciones/',
             )
             communicator.scope['user'] = SimpleNamespace(

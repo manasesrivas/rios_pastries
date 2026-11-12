@@ -23,10 +23,10 @@ class ProductListAPIView(ListCreateAPIView):
         search = self.request.query_params.get('search', '').strip()
         category_id = self.request.query_params.get('category_id', '').strip()
 
-        # if self.request.user.has_perm('products.change_product'):
-        queryset = Product.all_objects.select_related('category')
-        # else:
-            # queryset = Product.objects.all()
+        if self.request.user.has_perm('products.change_product'):
+            queryset = Product.all_objects.select_related('category')
+        else:
+            queryset = Product.objects.all()
 
         if search:
             queryset = queryset.filter(

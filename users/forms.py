@@ -7,6 +7,13 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import User
 from django.contrib.auth import password_validation
 
+TAILWIND_INPUT_CLASSES = (
+    'w-full rounded-lg border border-gray-300 bg-white px-4 py-3 '
+    'text-gray-900 shadow-sm outline-none transition '
+    'placeholder:text-gray-400 focus:border-indigo-500 '
+    'focus:ring-2 focus:ring-indigo-200'
+)
+
 # formulario para agregar usuarios desde el panel de administracion
 class UserModelForm(UserCreationForm):
 
@@ -20,11 +27,12 @@ class UserModelForm(UserCreationForm):
             )
         ],
         widget=forms.NumberInput(attrs={
-        'type': 'tel',
-        'placeholder': '1234-1234',
-        'maxlength': '9',
-        'pattern': r'[0-9]{4}-[0-9]{4}',
-        'required': True
+            'type': 'tel',
+            'placeholder': '0000-0000',
+            'maxlength': '9',
+            'pattern': r'[0-9]{4}-[0-9]{4}',
+            'required': True,
+            'oninput': "this.value = this.value.replace(/[^0-9]/g, '').replace(/^([0-9]{4})([0-9])/, '$1-$2').slice(0, 9)"
         })
     )
     
@@ -224,10 +232,11 @@ class UserProfileForm(forms.ModelForm):
         ],
         widget=forms.TextInput(attrs={
             'type': 'tel',
-            'placeholder': '1234-5678',
+            'placeholder': '0000-0000',
             'maxlength': '9',
             'pattern': r'[0-9]{4}-[0-9]{4}',
-            'autocomplete': 'tel',
+            'required': True,
+            'oninput': "this.value = this.value.replace(/[^0-9]/g, '').replace(/^([0-9]{4})([0-9])/, '$1-$2').slice(0, 9)"
         })
     )
 
