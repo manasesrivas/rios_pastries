@@ -1,10 +1,15 @@
 from django.shortcuts import render, HttpResponseRedirect, HttpResponse, redirect
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
 from .forms import LoginForm, UserRegisterForm
 from django.views import View
 from django.views.generic import CreateView, FormView
 from django.urls import reverse_lazy
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, url_has_allowed_host_and_scheme
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET
 from django.contrib.auth.views import PasswordResetView
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
@@ -69,10 +74,14 @@ class LoginView(View):
     form_class = LoginForm
     template_name = 'authentication/login.html'
     def get(self, request, *args, **kargs):
-        return render(request, self.template_name, {'form': self.form_class})
+        return render(request, self.template_name, {
+            'form': self.form_class,
+            'next': request.GET.get('next', ''),
+        })
 
     def post(self, request, *args, **kargs):
         form = self.form_class(request.POST)
+        next_url = request.POST.get('next', '')
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
@@ -83,6 +92,12 @@ class LoginView(View):
             )
             if user is not None:
                 login(request, user)
+                if url_has_allowed_host_and_scheme(
+                    next_url,
+                    allowed_hosts={request.get_host()},
+                    require_https=request.is_secure(),
+                ):
+                    return redirect(next_url)
                 return redirect('users:home')
 
         form.add_error(None, 'Correo electrónico o contraseña incorrectos.')
@@ -90,8 +105,34 @@ class LoginView(View):
         return render(
             request,
             self.template_name,
-            {'form': form}
+            {'form': form, 'next': next_url}
         )
+
+
+@login_required
+@require_GET
+@never_cache
+def apk_page(request):
+    return render(request, 'authentication/apk_download.html', {
+        'apk_available': settings.APK_FILE_PATH.is_file(),
+    })
+
+
+@login_required
+@require_GET
+@never_cache
+def apk_download(request):
+    try:
+        apk_file = settings.APK_FILE_PATH.open('rb')
+    except FileNotFoundError as error:
+        raise Http404('El APK aún no está disponible.') from error
+    return FileResponse(
+        apk_file,
+        as_attachment=True,
+        filename='rios-pastries.apk',
+        content_type='application/vnd.android.package-archive',
+    )
+
 
 def logout_view(request):
     logout(request)

@@ -10,12 +10,17 @@
         <form action="{% url 'authentication:login' %}" method="post"
               class="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-200">
             {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
 
             <div class="space-y-2 text-center">
                 <h1 class="text-3xl font-bold tracking-tight text-gray-900">
                     Iniciar sesión
                 </h1>
-                <p class="text-sm text-gray-600">Ingresa a tu cuenta</p>
+                <p class="text-sm text-gray-600">
+                    {% if next %}Inicia sesión para continuar.{% else %}Ingresa a tu cuenta{% endif %}
+                </p>
             </div>
 
         {% if form.non_field_errors %}
@@ -62,6 +67,12 @@
                 <a href="{% url 'authentication:register' %}"
                    class="font-semibold text-indigo-600 hover:text-indigo-500">
                     Crear cuenta
+                </a>
+            </p>
+            <p class="text-center text-sm text-gray-600">
+                <a href="{% url 'authentication:apk_page' %}"
+                   class="font-semibold text-indigo-600 hover:text-indigo-500">
+                    Descargar aplicación Android
                 </a>
             </p>
         </form>

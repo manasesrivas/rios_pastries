@@ -8,6 +8,14 @@ para encender el servidor:
 python manage.py runserver
 ```
 
+## Descarga de la aplicación Android
+
+Coloca el archivo APK en `private/rios-pastries.apk`. El enlace de la página
+de inicio de sesión lleva a una página de descarga que requiere iniciar sesión;
+el archivo se entrega mediante una ruta protegida y no desde archivos estáticos.
+El APK se ignora en Git: en el servidor debes copiarlo o proporcionarlo por
+separado en esa misma ruta.
+
 `DEBUG` se desactiva cuando está definida `RIOS_PASTRIES_EXTERNAL_HOSTNAME`
 o `RENDER_EXTERNAL_HOSTNAME`; sin ninguna de ellas permanece activo para
 desarrollo local. En producción, configura también `EMAIL_ADDRESS` y

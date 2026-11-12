@@ -10,6 +10,8 @@ urlpatterns = [
     path('', views.LoginView.as_view(), name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.UsersCreateView.as_view(), name='register'),
+    path('app/', views.apk_page, name='apk_page'),
+    path('app/download/', views.apk_download, name='apk_download'),
     
     path('verification-sent/', TemplateView.as_view(
         template_name='authentication/verification_sent.html',

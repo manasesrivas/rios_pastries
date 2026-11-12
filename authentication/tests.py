@@ -1,5 +1,7 @@
 from unittest.mock import patch
 from urllib.parse import urlsplit
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -8,6 +10,103 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from .forms import LoginForm, UserRegisterForm
+
+
+@override_settings(STORAGES={
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+})
+class ApkDownloadTests(TestCase):
+    def setUp(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.apk_path = Path(directory.name) / 'rios-pastries.apk'
+        self.apk_settings = override_settings(APK_FILE_PATH=self.apk_path)
+        self.apk_settings.enable()
+        self.addCleanup(self.apk_settings.disable)
+        self.user = get_user_model().objects.create_user(
+            email='apk@example.com', password='SecurePass123!',
+        )
+        self.page_url = reverse('authentication:apk_page')
+        self.download_url = reverse('authentication:apk_download')
+
+    def test_login_page_has_link_and_anonymous_access_requires_login(self):
+        response = self.client.get(reverse('authentication:login'))
+        self.assertContains(response, self.page_url)
+        for url in (self.page_url, self.download_url):
+            response = self.client.get(url)
+            self.assertRedirects(
+                response, f'{reverse("authentication:login")}?next={url}',
+                fetch_redirect_response=False,
+            )
+
+    def test_dashboard_links_to_apk_page_for_clients_and_staff(self):
+        self.client.force_login(self.user)
+        for is_staff in (False, True):
+            with self.subTest(is_staff=is_staff):
+                self.user.is_staff = is_staff
+                self.user.save(update_fields=['is_staff'])
+                response = self.client.get(reverse('users:home'))
+                self.assertContains(response, f'href="{self.page_url}"')
+                self.assertContains(response, 'Descargar aplicación Android')
+
+    def test_login_returns_to_page_and_downloads_apk(self):
+        self.apk_path.write_bytes(b'example apk bytes')
+        login_page = self.client.get(self.page_url, follow=True)
+        self.assertContains(login_page, f'name="next" value="{self.page_url}"')
+        response = self.client.post(reverse('authentication:login'), {
+            'email': self.user.email,
+            'password': 'SecurePass123!',
+            'next': self.page_url,
+        })
+        self.assertRedirects(response, self.page_url)
+        self.assertContains(self.client.get(self.page_url), self.download_url)
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.android.package-archive')
+        self.assertIn('attachment;', response['Content-Disposition'])
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertEqual(b''.join(response.streaming_content), b'example apk bytes')
+        response.close()
+
+    def test_missing_apk_is_reported_without_download(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.page_url)
+        self.assertContains(response, 'El APK aún no está disponible.')
+        self.assertNotContains(response, self.download_url)
+        self.assertEqual(self.client.get(self.download_url).status_code, 404)
+
+    def test_login_rejects_external_redirect_and_preserves_normal_login(self):
+        response = self.client.post(reverse('authentication:login'), {
+            'email': self.user.email,
+            'password': 'SecurePass123!',
+            'next': 'https://example.com/',
+        })
+        self.assertRedirects(response, reverse('users:home'), fetch_redirect_response=False)
+
+    def test_failed_login_preserves_destination(self):
+        response = self.client.post(reverse('authentication:login'), {
+            'email': self.user.email,
+            'password': 'wrong-password',
+            'next': self.page_url,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'name="next" value="{self.page_url}"')
+
+    def test_inactive_account_cannot_access_download(self):
+        self.user.is_active = False
+        self.user.save(update_fields=['is_active'])
+        response = self.client.post(reverse('authentication:login'), {
+            'email': self.user.email,
+            'password': 'SecurePass123!',
+            'next': self.page_url,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(
+            self.client.get(self.download_url),
+            f'{reverse("authentication:login")}?next={self.download_url}',
+            fetch_redirect_response=False,
+        )
 
 
 class LoginFormTests(TestCase):
