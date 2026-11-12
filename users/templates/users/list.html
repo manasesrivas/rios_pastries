@@ -15,6 +15,7 @@
                     <th scope="col" class="px-6 py-4 font-semibold">Email</th>
                     <th scope="col" class="px-6 py-4 font-semibold">Grupo</th>
                     <th scope="col" class="px-6 py-4 font-semibold">Estado</th>
+                    <th scope="col" class="px-6 py-4 font-semibold">Acceso</th>
                     <th scope="col" class="px-6 py-4 text-center font-semibold">Acciones</th>
                 </tr>
             </thead>
@@ -32,6 +33,7 @@
                             {% endfor %}
                         </td>
                         <td class="px-6 py-4">{{ user.get_estado_display }}</td>
+                        <td class="px-6 py-4">{% if user.is_active %}Habilitado{% else %}Deshabilitado{% endif %}</td>
                         <td class="px-6 py-4 text-center">
                             <a href="{% url 'users:detail' user.id %}" class="inline-flex items-center px-3 py-2 font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 Ver detalle
@@ -40,7 +42,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">Sin usuarios disponibles</td>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">Sin usuarios disponibles</td>
                     </tr>
                 {% endfor %}
             </tbody>

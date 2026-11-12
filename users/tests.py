@@ -1,9 +1,137 @@
-from django.test import TestCase
+from smtplib import SMTPException
+from unittest.mock import patch
+from urllib.parse import urlsplit
+
+from django.core import mail
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import Group, Permission
 
 from .forms import UserProfileForm
 from .models import User
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    },
+)
+class ResendVerificationTests(TestCase):
+    def setUp(self):
+        self.administrator = User.objects.create_user(
+            email='administrator@example.com', password='AdminPass123!',
+        )
+        self.administrator.groups.add(Group.objects.get(name='Administrador'))
+        self.administrator.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label='users',
+            codename__in=['add_user', 'view_user', 'change_user', 'delete_user'],
+        ))
+        self.target = User.objects.create_user(
+            email='pending@example.com', password='TargetPass123!', is_active=False,
+        )
+        self.client.force_login(self.administrator)
+        self.url = reverse('users:resend_verification', args=[self.target.pk])
+
+    def test_administrator_resends_activation_link_without_enabling_account(self):
+        detail = self.client.get(reverse('users:detail', args=[self.target.pk]))
+        self.assertContains(detail, 'Reenviar correo de verificación')
+        self.assertContains(detail, self.url)
+
+        response = self.client.post(self.url, follow=True)
+        self.assertContains(response, 'Se envió el correo de verificación.')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.target.email])
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_active)
+
+        activation_url = next(
+            line.strip() for line in mail.outbox[0].body.splitlines()
+            if '/activate/' in line
+        )
+        visitor = Client()
+        self.assertEqual(visitor.get(urlsplit(activation_url).path).status_code, 302)
+        self.target.refresh_from_db()
+        self.assertTrue(self.target.is_active)
+
+    def test_superuser_can_resend_but_other_roles_cannot(self):
+        superuser = User.objects.create_superuser(
+            email='superuser@example.com', password='AdminPass123!',
+        )
+        self.client.force_login(superuser)
+        self.assertEqual(self.client.post(self.url).status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+
+        staff = User.objects.create_user(email='staff@example.com', password='StaffPass123!')
+        staff.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label='users',
+            codename__in=['add_user', 'view_user', 'change_user', 'delete_user'],
+        ))
+        self.client.force_login(staff)
+        detail = self.client.get(reverse('users:detail', args=[self.target.pk]))
+        self.assertNotContains(detail, 'Reenviar correo de verificación')
+        self.assertEqual(self.client.post(self.url).status_code, 403)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_administrator_also_needs_user_management_permissions(self):
+        admin_without_permissions = User.objects.create_user(
+            email='no-permissions@example.com', password='AdminPass123!',
+        )
+        admin_without_permissions.groups.add(Group.objects.get(name='Administrador'))
+        self.client.force_login(admin_without_permissions)
+        self.assertEqual(self.client.post(self.url).status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_active_deleted_and_superuser_targets_are_not_eligible(self):
+        self.target.is_active = True
+        self.target.save(update_fields=['is_active'])
+        self.assertNotContains(
+            self.client.get(reverse('users:detail', args=[self.target.pk])),
+            'Reenviar correo de verificación',
+        )
+        self.assertEqual(self.client.post(self.url).status_code, 404)
+
+        self.target.is_active = False
+        self.target.estado = User.Estado.ELIMINADO
+        self.target.save(update_fields=['is_active', 'estado'])
+        self.assertEqual(self.client.post(self.url).status_code, 404)
+
+        self.target.estado = User.Estado.ACTIVO
+        self.target.is_superuser = True
+        self.target.save(update_fields=['estado', 'is_superuser'])
+        self.assertEqual(self.client.post(self.url).status_code, 404)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_requires_post_and_authentication(self):
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.client.logout()
+        self.assertEqual(self.client.post(self.url).status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_requires_csrf_token(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.administrator)
+        self.assertEqual(client.post(self.url).status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @patch('users.views.send_verification_email', side_effect=SMTPException('SMTP unavailable'))
+    def test_mail_failure_is_reported_without_enabling_account(self, send_email):
+        with self.assertLogs('users.views', level='ERROR'):
+            response = self.client.post(self.url, follow=True)
+        self.assertContains(response, 'No se pudo enviar el correo de verificación.')
+        send_email.assert_called_once()
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.is_active)
+
+    @patch('users.views.send_verification_email', return_value=0)
+    def test_zero_sent_messages_is_reported_as_failure(self, send_email):
+        with self.assertLogs('users.views', level='ERROR'):
+            response = self.client.post(self.url, follow=True)
+        self.assertContains(response, 'No se pudo enviar el correo de verificación.')
+        send_email.assert_called_once()
 
 
 class UserProfileViewTests(TestCase):

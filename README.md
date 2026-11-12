@@ -8,6 +8,15 @@ para encender el servidor:
 python manage.py runserver
 ```
 
+## Reenvío de verificación
+
+En el detalle de un usuario con acceso deshabilitado y que no esté eliminado,
+un administrador con permisos de gestión de usuarios o un superusuario puede
+reenviar el correo de verificación. El envío no habilita la cuenta: el enlace
+lo hará cuando el destinatario lo abra. Antes de reenviarlo, comprueba el motivo
+de la deshabilitación; el sistema no distingue una cuenta pendiente de verificar
+de una deshabilitada por otra causa.
+
 ## API de productos
 
 Instala las dependencias del proyecto (incluye Django REST Framework):

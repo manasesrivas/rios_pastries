@@ -4,7 +4,11 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'nombres', 'apellidos', 'estado')
+    list_display = ('email', 'nombres', 'apellidos', 'estado', 'acceso_habilitado')
+
+    @admin.display(boolean=True, description='Acceso habilitado')
+    def acceso_habilitado(self, obj):
+        return obj.is_active
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)

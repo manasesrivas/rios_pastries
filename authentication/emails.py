@@ -17,7 +17,7 @@ def send_verification_email(request, user):
         'user': user,
         'activation_url': activation_url,
     })
-    send_mail(
+    return send_mail(
         subject='Verifica tu correo electrónico',
         message=message,
         from_email=None,

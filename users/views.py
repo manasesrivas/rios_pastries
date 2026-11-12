@@ -1,3 +1,6 @@
+import logging
+from smtplib import SMTPException
+
 from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -7,14 +10,17 @@ from django.views.generic import DetailView, ListView, UpdateView, CreateView, D
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from django.contrib.auth.views import PasswordChangeView
 
 from .models import User
+from authentication.emails import send_verification_email
 
 
 from .forms import UserModelForm, UserProfileForm, UserUpdateForm
 DIR = 'users/'
+logger = logging.getLogger(__name__)
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -105,6 +111,50 @@ class UserDetailView(BasicConfiguration, DetailView):
     model = User
     template_name = 'users/detail.html'
     context_object_name = 'user'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        actor = self.request.user
+        context['can_resend_verification'] = (
+            (actor.is_superuser or actor.groups.filter(name='Administrador').exists())
+            and self.object.estado == User.Estado.ACTIVO
+            and not self.object.is_active
+        )
+        return context
+
+
+class UserResendVerificationView(BasicConfiguration, DetailView):
+    model = User
+    http_method_names = ['post']
+
+    def dispatch(self, request, *args, **kwargs):
+        if (
+            request.user.is_authenticated
+            and not request.user.is_superuser
+            and not request.user.groups.filter(name='Administrador').exists()
+        ):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        target = self.get_object(
+            queryset=self.get_queryset().filter(
+                estado=User.Estado.ACTIVO,
+                is_active=False,
+            ),
+        )
+        try:
+            sent = send_verification_email(request, target)
+        except (SMTPException, OSError):
+            logger.exception('Error al reenviar el correo de verificación del usuario %s', target.pk)
+            messages.error(request, 'No se pudo enviar el correo de verificación.')
+        else:
+            if sent:
+                messages.success(request, 'Se envió el correo de verificación.')
+            else:
+                logger.error('No se envió el correo de verificación del usuario %s', target.pk)
+                messages.error(request, 'No se pudo enviar el correo de verificación.')
+        return HttpResponseRedirect(reverse('users:detail', args=[target.pk]))
 
 
 class UserUpdateView(BasicConfiguration, UpdateView):

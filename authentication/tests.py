@@ -1,8 +1,10 @@
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import TestCase
+from django.core import mail
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from .forms import LoginForm, UserRegisterForm
@@ -45,6 +47,70 @@ class UserRegisterFormTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertFalse(user.is_active)
         send_verification_email.assert_called_once()
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        STORAGES={
+            'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+            'staticfiles': {
+                'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            },
+        },
+    )
+    def test_web_registration_requires_email_activation_before_login(self):
+        Group.objects.get_or_create(name='Cliente')
+        credentials = {'email': 'verify@example.com', 'password': 'ComplexPass123!'}
+        response = self.client.post(reverse('authentication:register'), {
+            'nombres': 'Ana',
+            'apellidos': 'Rivas',
+            'email': credentials['email'],
+            'telefono': '1234-5678',
+            'direccion': 'Calle principal',
+            'password1': credentials['password'],
+            'password2': credentials['password'],
+        })
+
+        self.assertEqual(response.status_code, 302)
+        user = get_user_model().objects.get(email=credentials['email'])
+        self.assertFalse(user.is_active)
+        self.assertEqual(len(mail.outbox), 1)
+
+        admin = get_user_model().objects.create_superuser(
+            email='admin@example.com', password='AdminPass123!',
+        )
+        admin_client = Client()
+        admin_client.force_login(admin)
+        listing = admin_client.get(reverse('users:list'))
+        self.assertContains(listing, user.email)
+        self.assertContains(listing, '<td class="px-6 py-4">Deshabilitado</td>', html=True)
+        detail = admin_client.get(reverse('users:detail', args=[user.pk]))
+        self.assertContains(detail, 'Deshabilitado')
+        admin_listing = admin_client.get(reverse('admin:users_user_changelist'))
+        self.assertContains(admin_listing, 'Acceso habilitado')
+        self.assertContains(admin_listing, 'icon-no.svg')
+
+        response = self.client.post(reverse('authentication:login'), credentials)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+
+        activation_url = next(
+            line.strip() for line in mail.outbox[0].body.splitlines()
+            if '/activate/' in line
+        )
+        response = self.client.get(urlsplit(activation_url).path)
+        self.assertEqual(response.status_code, 302)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
+        listing = admin_client.get(reverse('users:list'))
+        self.assertContains(listing, '<td class="px-6 py-4">Habilitado</td>', html=True)
+
+        self.client.logout()
+        response = self.client.post(reverse('authentication:login'), credentials)
+        self.assertRedirects(response, reverse('users:home'), fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
 
     def test_registration_fields_include_tailwind_classes(self):
         form = UserRegisterForm()
