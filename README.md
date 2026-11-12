@@ -62,6 +62,73 @@ Cajero pueden consultar todas. Las reservaciones eliminadas no aparecen en el
 listado. La respuesta incluye el ID de `sala`, el nombre de la sala y los datos
 del local asociado; `hall` y `venue` se devuelven como `null`.
 
+`POST /api/reservations/` crea una reservación con los productos indicados.
+Requiere JWT y el permiso `reservations.add_reservation`. La ruta anterior
+`POST /api/reservations/create/` sigue disponible. El servidor asigna el
+cliente autenticado, confirma la reservación, consolida productos repetidos
+y obtiene los precios de la base de datos. No se aplica horario comercial.
+Por defecto se permiten reservaciones sin productos: envía `items: []` o
+omite el campo. Para exigir al menos uno, configura
+`RESERVATIONS_REQUIRE_PRODUCTS = True` en Django.
+En SQLite, `select_for_update()` no bloquea filas: bajo concurrencia puede
+producirse un error de base de datos bloqueada. Para bloqueo por fila se
+requiere una base de datos compatible; la restricción única condicional también
+debe estar soportada por el motor elegido.
+
+Ejemplo de petición (elige una fecha futura y IDs existentes):
+
+```http
+POST /api/reservations/
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "fecha_evento": "2026-12-20",
+  "cantidad_personas": 50,
+  "sala": 3,
+  "items": [
+    {"product_id": 1, "quantity": 2},
+    {"product_id": 5, "quantity": 1}
+  ]
+}
+```
+
+Ejemplo de respuesta `201 Created`:
+
+```json
+{
+  "id": 10,
+  "cliente": 4,
+  "fecha_evento": "2026-12-20",
+  "cantidad_personas": 50,
+  "sala": 3,
+  "estado": "CONFIRMADA",
+  "hallName": "Salón principal",
+  "venueName": "Centro de eventos",
+  "venueAdress": "San Salvador",
+  "hall": null,
+  "venue": null,
+  "total_productos": "30.00",
+  "items": [
+    {"product": 1, "name": "Pastel", "quantity": 2, "price": "12.50", "subtotal": "25.00"},
+    {"product": 5, "name": "Mesa extra", "quantity": 1, "price": "5.00", "subtotal": "5.00"}
+  ]
+}
+```
+
+Los errores de reservación y disponibilidad pueden aparecer juntos en una
+respuesta `400 Bad Request`:
+
+```json
+{
+  "fecha_evento": ["Esta sala ya tiene una reservación activa para esa fecha."],
+  "items": [
+    {"product_id": 3, "name": "Pastel", "error": "El producto \"Pastel\" no está disponible actualmente."},
+    {"product_id": 7, "name": null, "error": "El producto no existe o fue eliminado."}
+  ]
+}
+```
+
 ## agregar un modulo al proyecto
 `djando` trabaja mediante apps, para crear una app necesita escribir el siguiente codigo en la terminal:
 ```bash
