@@ -15,6 +15,7 @@ class HallAPITests(APITestCase):
         self.venue = Venue.objects.create(
             name='Centro API',
             address='Avenida Central',
+            descripcion='Local para eventos',
         )
         self.available_hall = Hall.objects.create(
             venue=self.venue,
@@ -51,7 +52,13 @@ class HallAPITests(APITestCase):
             [self.available_hall.pk],
         )
         self.assertEqual(response.data[0]['venueName'], self.venue.name)
-        self.assertNotIn('venue', response.data[0])
+        self.assertEqual(response.data[0]['venue'], {
+            'id': self.venue.pk,
+            'name': 'Centro API',
+            'address': 'Avenida Central',
+            'descripcion': 'Local para eventos',
+            'status': self.venue.status,
+        })
 
     def test_detail_shows_available_hall_and_hides_reserved_hall(self):
         user = get_user_model().objects.create_user(
@@ -76,7 +83,13 @@ class HallAPITests(APITestCase):
         self.assertEqual(available_response.status_code, 200)
         self.assertEqual(available_response.data['name'], 'Salón disponible')
         self.assertEqual(available_response.data['venueName'], self.venue.name)
-        self.assertNotIn('venue', available_response.data)
+        self.assertEqual(available_response.data['venue'], {
+            'id': self.venue.pk,
+            'name': 'Centro API',
+            'address': 'Avenida Central',
+            'descripcion': 'Local para eventos',
+            'status': self.venue.status,
+        })
         self.assertEqual(reserved_response.status_code, 404)
 
     def test_list_and_detail_require_authentication_and_view_permission(self):
