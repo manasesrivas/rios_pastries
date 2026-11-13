@@ -10,16 +10,10 @@ from halls.models import Hall
 from products.models import Product
 from products_reservations.models import ReservationItem
 
-from .models import EstadoReservacion, Reservation
+from .models import EstadoReservacion, INACTIVE_RESERVATION_STATES, Reservation
 
 
 OCCUPIED_MESSAGE = 'Esta sala ya tiene una reservación activa para esa fecha.'
-INACTIVE_RESERVATION_STATES = [
-    EstadoReservacion.CANCELADA,
-    EstadoReservacion.ELIMINADA,
-]
-
-
 def active_reservations(sala, fecha_evento):
     return Reservation.objects.filter(
         sala=sala,

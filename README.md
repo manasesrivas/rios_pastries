@@ -80,7 +80,10 @@ Ejemplo de cuerpo:
 
 `GET /api/halls/` y `GET /api/halls/<id>/` requieren autenticación JWT y el
 permiso `view_hall`. Además de `venueName`, cada sala incluye `venue` con
-`id`, `name`, `address`, `descripcion` y `status` del local.
+`id`, `name`, `address`, `descripcion` y `status` del local. El campo
+`reservedDates` contiene todas las fechas de reservas activas de la sala,
+ordenadas en formato `YYYY-MM-DD`; excluye las reservas canceladas y eliminadas.
+Si no hay reservas activas, devuelve `[]`.
 
 ## API de reservaciones
 

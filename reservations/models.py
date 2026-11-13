@@ -14,6 +14,12 @@ class EstadoReservacion(models.TextChoices):
     ELIMINADA = 'ELIMINADA', 'Eliminada'
 
 
+INACTIVE_RESERVATION_STATES = [
+    EstadoReservacion.CANCELADA,
+    EstadoReservacion.ELIMINADA,
+]
+
+
 class Reservation(models.Model):
     cliente = models.ForeignKey(
         User,
@@ -39,10 +45,7 @@ class Reservation(models.Model):
             # Solo las reservaciones activas bloquean la sala en esa fecha.
             models.UniqueConstraint(
                 fields=['sala', 'fecha_evento'],
-                condition=~Q(estado__in=[
-                    EstadoReservacion.CANCELADA,
-                    EstadoReservacion.ELIMINADA,
-                ]),
+                condition=~Q(estado__in=INACTIVE_RESERVATION_STATES),
                 name='unique_sala_fecha_evento',
                 violation_error_message=(
                     'Esta sala ya tiene una reservación activa para esa fecha.'

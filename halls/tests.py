@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase
 
+from reservations.models import EstadoReservacion, Reservation
 from venues.models import Venue
 
 from .models import Hall, HallStatus
@@ -129,6 +130,59 @@ class HallAPITests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
+
+    def test_list_and_detail_include_only_active_reservation_dates_for_each_hall(self):
+        user = get_user_model().objects.create_user(
+            email='hall-dates@example.com',
+            password='SecurePass123!',
+        )
+        user.user_permissions.add(
+            Permission.objects.get(content_type__app_label='halls', codename='view_hall'),
+            Permission.objects.get(content_type__app_label='halls', codename='change_hall'),
+        )
+        self.client.force_authenticate(user=user)
+
+        for date, state in (
+            ('2026-12-20', EstadoReservacion.CONFIRMADA),
+            ('2025-01-01', EstadoReservacion.PENDIENTE),
+            ('2026-12-21', EstadoReservacion.CANCELADA),
+            ('2026-12-22', EstadoReservacion.ELIMINADA),
+        ):
+            Reservation.objects.create(
+                cliente=user, sala=self.available_hall, fecha_evento=date,
+                cantidad_personas=10, estado=state,
+            )
+        Reservation.objects.create(
+            cliente=user, sala=self.reserved_hall, fecha_evento='2026-12-23',
+            cantidad_personas=10, estado=EstadoReservacion.CONFIRMADA,
+        )
+
+        list_response = self.client.get(reverse('halls_api:list'))
+        detail_response = self.client.get(
+            reverse('halls_api:detail', args=[self.available_hall.pk])
+        )
+
+        self.assertEqual(list_response.status_code, 200)
+        dates_by_hall = {hall['id']: hall['reservedDates'] for hall in list_response.data}
+        self.assertEqual(dates_by_hall[self.available_hall.pk], ['2025-01-01', '2026-12-20'])
+        self.assertEqual(dates_by_hall[self.reserved_hall.pk], ['2026-12-23'])
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(detail_response.data['reservedDates'], ['2025-01-01', '2026-12-20'])
+
+    def test_hall_without_reservations_has_empty_dates(self):
+        user = get_user_model().objects.create_user(
+            email='hall-no-dates@example.com',
+            password='SecurePass123!',
+        )
+        user.user_permissions.add(
+            Permission.objects.get(content_type__app_label='halls', codename='view_hall')
+        )
+        self.client.force_authenticate(user=user)
+
+        response = self.client.get(reverse('halls_api:detail', args=[self.available_hall.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['reservedDates'], [])
 
 
 class HallViewsTests(TestCase):
